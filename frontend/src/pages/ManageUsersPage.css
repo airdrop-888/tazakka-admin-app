@@ -1,0 +1,96 @@
+/* frontend/src/pages/ManageUsersPage.css (KODE FINAL DENGAN ALIGNMENT SEMPURNA) */
+
+.manage-users-layout {
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.card-style {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 12px; /* <-- PERBAIKAN 1: Radius dibuat lebih tegas dan konsisten */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* --- PERBAIKAN 2: Reset margin heading agar kartu sejajar --- */
+.card-style h2,
+.card-style h3 {
+  margin-top: 0;
+}
+/* --- AKHIR PERBAIKAN 2 --- */
+
+
+.form-container h3 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px 20px;
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.form-container input[type="text"],
+.form-container input[type="password"],
+.form-container select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  box-sizing: border-box;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-container input::placeholder {
+  color: #a0aec0;
+}
+
+.form-container input:focus,
+.form-container select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.form-actions {
+  margin-top: 25px;
+}
+
+.form-actions .btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.user-list-container {
+  padding: 0; 
+}
+
+.user-list-container h2 {
+  padding: 25px 25px 20px 25px; 
+  margin-bottom: 0; /* Pastikan tidak ada margin bawah tambahan */
+}
+
+/* Responsiveness untuk layar kecil */
+@media (max-width: 992px) {
+  .manage-users-layout {
+    grid-template-columns: 1fr;
+  }
+}
