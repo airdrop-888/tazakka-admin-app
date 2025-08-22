@@ -76,10 +76,10 @@ const EditItemModal = ({ token, item, type, onClose, onSave }) => {
           payload = { description: formData.description, amount: parseFloat(formData.amount || 0) };
       }
 
-      await axios.put(`http://127.0.0.1:8000${endpoint}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
+		await axios.put(apiUrl, payload, ...);
       onSave();
+	  
     } catch (err) {
       setError(err.response?.data?.detail || 'Gagal menyimpan perubahan.');
       console.error("Error saving item:", err.response?.data || err);

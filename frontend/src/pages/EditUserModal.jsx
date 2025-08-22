@@ -35,9 +35,8 @@ const EditUserModal = ({ token, user, onClose, onSave }) => {
     }
 
     try {
-      await axios.put(`http://127.0.0.1:8000/users/${user.id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
+	await axios.put(apiUrl, payload, ...);
       onSave();
     } catch (err) {
       setError(err.response?.data?.detail || 'Gagal menyimpan perubahan.');
