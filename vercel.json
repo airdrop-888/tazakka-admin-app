@@ -7,11 +7,7 @@
     },
     {
       "src": "frontend/package.json",
-      "use": "@vercel/node",
-      "config": {
-        "buildCommand": "npm run build",
-        "outputDirectory": "dist" 
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -24,7 +20,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.html" 
+      "dest": "/index.html"
     }
   ]
 }
