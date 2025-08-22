@@ -2,26 +2,29 @@
   "version": 2,
   "builds": [
     {
-      "src": "requirements.txt",
+      "src": "api/index.py",
       "use": "@vercel/python"
     },
     {
       "src": "frontend/package.json",
       "use": "@vercel/node",
       "config": {
-        "installCommand": "npm install",
-        "buildCommand": "npm run build"
+        "buildCommand": "npm run build",
+        "outputDirectory": "dist" 
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "dest": "api/index.py"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "dest": "/index.html"
     }
   ]
 }
