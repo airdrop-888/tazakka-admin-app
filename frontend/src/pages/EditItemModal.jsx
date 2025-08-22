@@ -75,15 +75,15 @@ const EditItemModal = ({ token, item, type, onClose, onSave }) => {
           endpoint = `/stock-purchases/${item.id}`;
           payload = { description: formData.description, amount: parseFloat(formData.amount || 0) };
       }
-
-      // --- PERBAIKAN 1: Gunakan path relatif untuk Vercel ---
+      
       const apiUrl = `/api${endpoint}`;
 
-      // --- PERBAIKAN 2: Perbaiki sintaks axios.put dengan menyertakan header ---
+      // --- INI ADALAH BARIS YANG DIPERBAIKI ---
       await axios.put(apiUrl, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+      // --- AKHIR PERBAIKAN ---
+
       onSave();
 	  
     } catch (err) {
