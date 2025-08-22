@@ -45,5 +45,4 @@ SQLAlchemy
 python-jose[cryptography]
 passlib[bcrypt]
 psycopg2-binary # Untuk koneksi ke database PostgreSQL
-pandas
 openpyxl
