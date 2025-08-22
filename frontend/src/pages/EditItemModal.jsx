@@ -1,4 +1,4 @@
-// frontend/src/pages/EditItemModal.jsx (KODE LENGKAP DENGAN PERBAIKAN SCROLL)
+// frontend/src/pages/EditItemModal.jsx (KODE LENGKAP - PERBAIKAN FINAL)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -76,8 +76,14 @@ const EditItemModal = ({ token, item, type, onClose, onSave }) => {
           payload = { description: formData.description, amount: parseFloat(formData.amount || 0) };
       }
 
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
-		await axios.put(apiUrl, payload, ...);
+      // --- PERBAIKAN 1: Gunakan path relatif untuk Vercel ---
+      const apiUrl = `/api${endpoint}`;
+
+      // --- PERBAIKAN 2: Perbaiki sintaks axios.put dengan menyertakan header ---
+      await axios.put(apiUrl, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
       onSave();
 	  
     } catch (err) {
@@ -150,13 +156,12 @@ const EditItemModal = ({ token, item, type, onClose, onSave }) => {
           borderRadius: '8px', 
           minWidth: '450px', 
           boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-          // --- PERBAIKAN PENTING ---
-          maxHeight: '90vh', // Batasi tinggi maksimal
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column'
         }}>
         <h2 style={{marginTop: 0, flexShrink: 0}}>Edit Data</h2>
-        <form onSubmit={handleSave} className="form-section" style={{ overflowY: 'auto', paddingRight: '15px' }}> {/* Tambahkan scroll di sini */}
+        <form onSubmit={handleSave} className="form-section" style={{ overflowY: 'auto', paddingRight: '15px' }}>
             {renderFormFields()}
             
             <div style={{marginTop: '20px', display: 'flex', gap: '10px', flexShrink: 0}}>
