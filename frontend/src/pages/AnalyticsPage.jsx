@@ -1,4 +1,4 @@
-// frontend/src/AnalyticsPage.jsx (KODE FINAL - FIX TYPO BLANK SCREEN)
+// frontend/src/AnalyticsPage.jsx (KODE LENGKAP - SUDAH DIPERBAIKI)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -63,8 +63,13 @@ function AnalyticsPage({ token }) {
             chartParams.month = selectedMonth;
         }
         
-        const summaryPromise = axios.get(`http://127.0.0.1:8000${endpoint}`, { headers: { Authorization: `Bearer ${token}` }, params });
-        const chartPromise = axios.get('http://127.0.0.1:8000/reports/chart-data/', { 
+        // --- PERBAIKAN 1 ---
+        const summaryApiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
+        const summaryPromise = axios.get(summaryApiUrl, { headers: { Authorization: `Bearer ${token}` }, params });
+        
+        // --- PERBAIKAN 2 ---
+        const chartApiUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/chart-data/`;
+        const chartPromise = axios.get(chartApiUrl, { 
             headers: { Authorization: `Bearer ${token}` },
             params: chartParams
         });
@@ -125,115 +130,11 @@ function AnalyticsPage({ token }) {
       fetchData(); 
     } 
   }, [fetchData, token]);
-
-  const getTitle = () => {
-    if (loading && !summaryData) return "Memuat Analytics...";
-    const dateObj = new Date(selectedDate + 'T00:00:00');
-    const formattedDate = dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    if (view === 'weekly') return `Ringkasan Laporan Minggu Ini (Mencakup ${formattedDate})`;
-    if (view === 'monthly') return `Ringkasan Laporan Bulan ${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}`;
-    if (view === 'annual') return `Ringkasan Laporan Tahun ${selectedYear}`;
-    return "Halaman Analytics";
-  };
-
-  const renderFilters = () => {
-    return (
-      <div className="filter-controls">
-        {view === 'weekly' && (
-          <div className="filter-item">
-            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-          </div>
-        )}
-        {view === 'monthly' && (
-          <>
-            <div className="filter-item">
-              <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}>
-                {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-            </div>
-            <div className="filter-item">
-              <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-          </>
-        )}
-        {view === 'annual' && (
-          <div className="filter-item">
-            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-        )}
-      </div>
-    );
-  };
   
-  const renderContent = () => {
-    if (!token) return <p>Silakan login untuk melihat Analytics.</p>;
-    if (loading) return <p>Memuat data...</p>;
-    if (error) return <p className="error">{error}</p>;
-    if (!summaryData || !chartData) return <p>Tidak ada data untuk ditampilkan.</p>;
-    
-    return (
-        <>
-            {(view === 'monthly' || view === 'weekly') && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '30px', marginBottom: '30px' }}>
-                    <div className="chart-container">
-                        <h3 className="chart-title">Tren 30 Hari Terakhir</h3>
-                        {chartData?.trend?.datasets?.[0]?.data?.length > 0 ? (
-                          <div className="chart-wrapper" style={{height: '300px', position: 'relative'}}>
-                            <Bar 
-                              options={{ responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }} 
-                              data={chartData.trend} 
-                            />
-                          </div>
-                        ) : <p>Belum ada data pendapatan yang cukup untuk ditampilkan.</p>}
-                    </div>
-                    <div className="chart-container">
-                        <h3 className="chart-title">Pendapatan per Kategori Perangkat</h3>
-                        {chartData?.category?.datasets?.[0]?.data?.length > 0 ? (
-                          <div className="chart-wrapper" style={{height: '300px', position: 'relative'}}>
-                            <Doughnut 
-                              options={{ 
-                                responsive: true, 
-                                maintainAspectRatio: false,
-                                plugins: {
-                                  legend: { display: true, position: 'right' },
-                                  datalabels: {
-                                    formatter: (value, context) => context.chart.data.labels[context.dataIndex],
-                                    color: '#ffffff', font: { weight: 'bold', size: 12 },
-                                    backgroundColor: 'rgba(0, 0, 0, 0.6)', borderRadius: 4, padding: 6,
-                                  },
-                                },
-                              }} 
-                              data={chartData.category} 
-                            />
-                          </div>
-                        ) : <p>Belum ada data kategori untuk ditampilkan.</p>}
-                    </div>
-                </div>
-            )}
-            {view === 'annual' && chartData.annual && (
-                <div className="chart-container" style={{ marginBottom: '30px' }}>
-                    <h3 className="chart-title">Pendapatan Bulanan Tahun {selectedYear}</h3>
-                    <div className="chart-wrapper" style={{height: '300px', position: 'relative', maxWidth: '100%'}}>
-                      <Bar options={{ responsive: true, maintainAspectRatio: false }} data={chartData.annual} />
-                    </div>
-                </div>
-            )}
-
-            <h2>Ringkasan</h2>
-            <div className="report-grid">
-              <div className="report-card"><h3 style={{color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>Laba Bersih Final</h3><p style={{ color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>{formatToRupiah(summaryData.laba_bersih_final)}</p></div>
-              {/* --- PERBAIKAN TYPO DI SINI --- */}
-              <div className="report-card"><h3>Total Pendapatan</h3><p>{formatToRupiah(summaryData.total_pendapatan)}</p></div>
-              <div className="report-card"><h3>Total Pengeluaran</h3><p style={{ color: '#e74c3c' }}>{formatToRupiah(summaryData.total_pengeluaran)}</p></div>
-              <div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div>
-            </div>
-        </>
-    );
-  };
+  // Sisa kode tidak perlu diubah...
+  const getTitle = () => { if (loading && !summaryData) return "Memuat Analytics..."; const dateObj = new Date(selectedDate + 'T00:00:00'); const formattedDate = dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); if (view === 'weekly') return `Ringkasan Laporan Minggu Ini (Mencakup ${formattedDate})`; if (view === 'monthly') return `Ringkasan Laporan Bulan ${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}`; if (view === 'annual') return `Ringkasan Laporan Tahun ${selectedYear}`; return "Halaman Analytics"; };
+  const renderFilters = () => { return (<div className="filter-controls">{view === 'weekly' && (<div className="filter-item"><input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>)}{view === 'monthly' && (<><div className="filter-item"><select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}>{months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div><div className="filter-item"><select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div></>)}{view === 'annual' && (<div className="filter-item"><select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div>)}</div>); };
+  const renderContent = () => { if (!token) return <p>Silakan login untuk melihat Analytics.</p>; if (loading) return <p>Memuat data...</p>; if (error) return <p className="error">{error}</p>; if (!summaryData || !chartData) return <p>Tidak ada data untuk ditampilkan.</p>; return (<>{(view === 'monthly' || view === 'weekly') && (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '30px', marginBottom: '30px' }}><div className="chart-container"><h3 className="chart-title">Tren 30 Hari Terakhir</h3>{chartData?.trend?.datasets?.[0]?.data?.length > 0 ? (<div className="chart-wrapper" style={{height: '300px', position: 'relative'}}><Bar options={{ responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }} data={chartData.trend} /></div>) : <p>Belum ada data pendapatan yang cukup untuk ditampilkan.</p>}</div><div className="chart-container"><h3 className="chart-title">Pendapatan per Kategori Perangkat</h3>{chartData?.category?.datasets?.[0]?.data?.length > 0 ? (<div className="chart-wrapper" style={{height: '300px', position: 'relative'}}><Doughnut options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right' }, datalabels: { formatter: (value, context) => context.chart.data.labels[context.dataIndex], color: '#ffffff', font: { weight: 'bold', size: 12 }, backgroundColor: 'rgba(0, 0, 0, 0.6)', borderRadius: 4, padding: 6, }, }, }} data={chartData.category} /></div>) : <p>Belum ada data kategori untuk ditampilkan.</p>}</div></div>)}{view === 'annual' && chartData.annual && (<div className="chart-container" style={{ marginBottom: '30px' }}><h3 className="chart-title">Pendapatan Bulanan Tahun {selectedYear}</h3><div className="chart-wrapper" style={{height: '300px', position: 'relative', maxWidth: '100%'}}><Bar options={{ responsive: true, maintainAspectRatio: false }} data={chartData.annual} /></div></div>)}<h2>Ringkasan</h2><div className="report-grid"><div className="report-card"><h3 style={{color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>Laba Bersih Final</h3><p style={{ color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>{formatToRupiah(summaryData.laba_bersih_final)}</p></div><div className="report-card"><h3>Total Pendapatan</h3><p>{formatToRupiah(summaryData.total_pendapatan)}</p></div><div className="report-card"><h3>Total Pengeluaran</h3><p style={{ color: '#e74c3c' }}>{formatToRupiah(summaryData.total_pengeluaran)}</p></div><div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div></div></>); };
 
   return (
     <div className="container analytics-page-layout">
@@ -243,22 +144,8 @@ function AnalyticsPage({ token }) {
             {renderFilters()}
         </div>
       </div>
-
-      <div className="view-toggle-buttons">
-        <button onClick={() => setView('weekly')} className={view === 'weekly' ? 'active' : ''}>
-          Mingguan
-        </button>
-        <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>
-          Bulanan
-        </button>
-        <button onClick={() => setView('annual')} className={view === 'annual' ? 'active' : ''}>
-          Tahunan
-        </button>
-      </div>
-      
-      <div className="analytics-content-wrapper">
-        {renderContent()}
-      </div>
+      <div className="view-toggle-buttons"><button onClick={() => setView('weekly')} className={view === 'weekly' ? 'active' : ''}>Mingguan</button><button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>Bulanan</button><button onClick={() => setView('annual')} className={view === 'annual' ? 'active' : ''}>Tahunan</button></div>
+      <div className="analytics-content-wrapper">{renderContent()}</div>
     </div>
   );
 }

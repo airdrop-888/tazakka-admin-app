@@ -1,4 +1,4 @@
-// frontend/src/pages/LoginPage.jsx
+// frontend/src/pages/LoginPage.jsx (KODE LENGKAP - VERSI FINAL)
 
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -21,13 +21,22 @@ function LoginPage({ setToken }) {
     params.append('password', password);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/token', params, {
+      // --- PERBAIKAN PENTING ADA DI SINI ---
+      // 1. Kita membuat URL API secara dinamis dari environment variable.
+      //    Saat di Vercel, ini akan menjadi "/api/token".
+      //    Saat di lokal, ini juga akan menjadi "/api/token" (jika Anda menjalankan dengan Vite dev server).
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/token`;
+
+      // 2. Kita menggunakan apiUrl yang sudah benar, bukan lagi alamat hardcode 'http://127.0.0.1:8000/token'
+      const response = await axios.post(apiUrl, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
+      // --- AKHIR PERBAIKAN ---
+      
       setToken(response.data.access_token);
     } catch (err) {
       setError('Username atau password salah.');
-      console.error(err);
+      console.error("Login Error:", err); // Pesan log yang lebih baik
     } finally {
       setLoading(false);
     }

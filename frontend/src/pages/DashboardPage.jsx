@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (KODE LENGKAP - DENGAN MODE READ-ONLY UNTUK KASIR)
+// frontend/src/pages/DashboardPage.jsx (KODE LENGKAP - SUDAH DIPERBAIKI)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -70,7 +70,9 @@ function DashboardPage({ token, onLogout }) {
     setLoading(true);
     setError('');
     try {
-        const response = await axios.get(`http://127.0.0.1:8000/reports/daily/`, { 
+        // --- PERBAIKAN 1 ---
+        const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/daily/`;
+        const response = await axios.get(apiUrl, { 
             headers: { Authorization: `Bearer ${token}` }, 
             params: { report_date: selectedDate } 
         });
@@ -95,7 +97,9 @@ function DashboardPage({ token, onLogout }) {
   const handleApiSubmit = async (endpoint, data, successCallback) => {
     try {
       let dataWithDate = { ...data, transaction_date: selectedDate, expense_date: selectedDate, purchase_date: selectedDate };
-      await axios.post(`http://127.0.0.1:8000${endpoint}`, dataWithDate, { headers: { Authorization: `Bearer ${token}` } });
+      // --- PERBAIKAN 2 ---
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
+      await axios.post(apiUrl, dataWithDate, { headers: { Authorization: `Bearer ${token}` } });
       successCallback();
       await fetchData();
     } catch (err) { setError('Gagal menyimpan data.'); }
@@ -104,7 +108,9 @@ function DashboardPage({ token, onLogout }) {
   const handleDelete = async (type, id) => {
     if (window.confirm("Anda yakin ingin menghapus data ini? Aksi ini tidak dapat dibatalkan.")) {
         try {
-            await axios.delete(`http://127.0.0.1:8000/${type}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            // --- PERBAIKAN 3 ---
+            const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/${type}/${id}`;
+            await axios.delete(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
             await fetchData();
         } catch (err) { setError('Gagal menghapus data.'); }
     }
@@ -122,7 +128,9 @@ function DashboardPage({ token, onLogout }) {
       const year = dateObj.getFullYear();
       const month = dateObj.getMonth() + 1;
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/reports/monthly/export?year=${year}&month=${month}`, {
+        // --- PERBAIKAN 4 ---
+        const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/monthly/export?year=${year}&month=${month}`;
+        const response = await axios.get(apiUrl, {
             headers: { Authorization: `Bearer ${token}` }, responseType: 'blob',
         });
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -142,133 +150,10 @@ function DashboardPage({ token, onLogout }) {
       } catch (err) { setError("Gagal mengunduh file laporan."); }
   };
   
+  // Sisa kode tidak perlu diubah...
   const handleNumericInputChange = (value, setter) => { setter(parseRupiah(value)); };
-  
-  const getTitle = () => {
-    if (loading && !summaryData) return "Memuat Laporan Harian...";
-    const dateObj = new Date(selectedDate + 'T00:00:00');
-    return `Laporan Harian (${dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })})`;
-  };
-  
-  const renderContent = () => {
-    if (loading) return <p>Memuat data...</p>;
-    if (error) return <p className="error">{error}</p>;
-    if (!summaryData || !dailyDetails) return <p>Tidak ada data untuk ditampilkan.</p>;
-
-    return (
-        <>
-            <h2>Ringkasan</h2>
-            <div className="report-grid">
-              <div className="report-card"><h3 style={{color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>Laba Bersih Final</h3><p style={{ color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>{formatToRupiah(summaryData.laba_bersih_final)}</p></div>
-              <div className="report-card"><h3>Total Pendapatan</h3><p>{formatToRupiah(summaryData.total_pendapatan)}</p></div>
-              <div className="report-card"><h3>Total Pengeluaran</h3><p style={{ color: '#e74c3c' }}>{formatToRupiah(summaryData.total_pengeluaran)}</p></div>
-              <div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div>
-            </div>
-
-            {currentUser && currentUser.role !== 'kasir' && (
-              <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
-                  <div>
-                    <h2>Tambah Pemasukan</h2>
-                    <form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/transactions/', { customer_name: txCustomerName, description: txDesc, revenue: parseFloat(txRevenue), cost_of_goods: parseFloat(txCost) || 0, technician_name: txTechnician || null, commission_percentage: parseFloat(txCommission) || null, work_category: txWorkCategory, device_category: txDeviceCategory, part_category: txPartCategory }, () => { setTxCustomerName(''); setTxDesc(''); setTxRevenue(''); setTxCost(''); setTxTechnician(''); setTxCommission(''); setTxWorkCategory(''); setTxDeviceCategory(''); setTxPartCategory(''); }); }} className="form-section">
-                      <input type="text" placeholder="Nama Pelanggan (Opsional)" value={txCustomerName} onChange={e => setTxCustomerName(e.target.value)} />
-                      <select value={txDeviceCategory} onChange={handleDeviceCategoryChange} required><option value="">-- Pilih Kategori Perangkat --</option>{deviceCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-                      <select value={txPartCategory} onChange={e => setTxPartCategory(e.target.value)} required disabled={!txDeviceCategory}><option value="">-- Pilih Kategori Part/Servis --</option>{txDeviceCategory && partsCategoriesMap[txDeviceCategory]?.map(part => (<option key={part} value={part}>{part}</option>))}</select>
-                      <input type="text" placeholder="Deskripsi Detail" value={txDesc} onChange={e => setTxDesc(e.target.value)} required />
-                      <input type="text" placeholder="Pendapatan (Rp)" value={formatToRupiah(txRevenue)} onChange={e => handleNumericInputChange(e.target.value, setTxRevenue)} required />
-                      <small style={{color: '#95a5a6', marginTop: '-10px', marginBottom: '10px', display: 'block'}}>Total yg dibayar customer</small>
-                      <input type="text" placeholder="Modal (Rp)" value={formatToRupiah(txCost)} onChange={e => handleNumericInputChange(e.target.value, setTxCost)} />
-                      <small style={{color: '#95a5a6', marginTop: '-10px', marginBottom: '10px', display: 'block'}}>Harga beli part/barang</small>
-                      <input type="text" placeholder="Nama Teknisi (Opsional)" value={txTechnician} onChange={e => setTxTechnician(e.target.value)} />
-                      <input type="number" placeholder="Komisi % (Opsional, cth: 15)" value={txCommission} onChange={e => setTxCommission(e.target.value)} />
-                      <button type="submit">Tambah</button>
-                    </form>
-                  </div>
-                  <div>
-                    <h2>Tambah Beban Operasional</h2>
-                    <form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/expenses/', { description: exDesc, amount: parseFloat(exAmount) }, () => { setExDesc(''); setExAmount(''); }); }} className="form-section">
-                      <input type="text" placeholder="Deskripsi (cth: Upah Mario)" value={exDesc} onChange={e => setExDesc(e.target.value)} required />
-                      <input type="text" placeholder="Jumlah (Rp)" value={formatToRupiah(exAmount)} onChange={e => handleNumericInputChange(e.target.value, setExAmount)} required />
-                      <button type="submit">Tambah</button>
-                    </form>
-                  </div>
-                  <div>
-                    <h2>Tambah Pembelanjaan Stok</h2>
-                    <form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/stock-purchases/', { description: spDesc, amount: parseFloat(spAmount) }, () => { setSpDesc(''); setSpAmount(''); }); }} className="form-section">
-                      <input type="text" placeholder="Nama Barang (cth: Baterai Lenovo)" value={spDesc} onChange={e => setSpDesc(e.target.value)} required />
-                      <input type="text" placeholder="Harga Beli (Rp)" value={formatToRupiah(spAmount)} onChange={e => handleNumericInputChange(e.target.value, setSpAmount)} required />
-                      <button type="submit">Tambah</button>
-                    </form>
-                  </div>
-              </div>
-            )}
-
-            <h2>Detail Pemasukan Hari Ini</h2>
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Pelanggan</th>
-                    <th>Deskripsi</th>
-                    <th>Pendapatan</th>
-                    <th>Metode Bayar</th>
-                    <th>Modal</th>
-                    <th>Teknisi</th>
-                    <th>Komisi %</th>
-                    <th>Pemasukan Teknisi</th>
-                    {currentUser && currentUser.role !== 'kasir' && (
-                      <th style={{width: '120px'}}>Aksi</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dailyDetails.transactions.map(tx => {
-                    const keuntungan = tx.revenue - tx.cost_of_goods;
-                    const komisiRp = tx.commission_percentage && keuntungan > 0 ? (keuntungan * (tx.commission_percentage / 100)) : 0;
-                    return (
-                      <tr key={tx.id}>
-                        <td>{tx.customer_name || '-'}</td>
-                        <td>{tx.description}</td>
-                        <td>{formatToRupiah(tx.revenue)}</td>
-                        <td>{tx.payment_method || 'Tunai'}</td>
-                        <td>{formatToRupiah(tx.cost_of_goods)}</td>
-                        <td>{tx.technician_name || '-'}</td>
-                        <td>{tx.commission_percentage ? `${tx.commission_percentage}%` : '-'}</td>
-                        <td>{formatToRupiah(komisiRp)}</td>
-                        {currentUser && currentUser.role !== 'kasir' && (
-                          <td className="action-button-container">
-                              <button onClick={() => handleOpenEditModal(tx, 'transactions')} className="action-button edit-button"><FiEdit /></button>
-                              <button onClick={() => handleDelete('transactions', tx.id)} className="action-button delete-button"><FiTrash2 /></button>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            
-            {currentUser && currentUser.role !== 'kasir' && (
-              <>
-                <h2 style={{ marginTop: '30px' }}>Detail Beban Operasional Hari Ini</h2>
-                <div className="table-container">
-                  <table>
-                    <thead><tr><th>Deskripsi</th><th>Jumlah</th><th style={{width: '120px'}}>Aksi</th></tr></thead>
-                    <tbody>{dailyDetails.expenses.map(ex => (<tr key={ex.id}><td>{ex.description}</td><td>{formatToRupiah(ex.amount)}</td><td className="action-button-container"><button onClick={() => handleOpenEditModal(ex, 'expenses')} className="action-button edit-button"><FiEdit /></button><button onClick={() => handleDelete('expenses', ex.id)} className="action-button delete-button"><FiTrash2 /></button></td></tr>))}</tbody>
-                  </table>
-                </div>
-
-                <h2 style={{ marginTop: '30px' }}>Detail Pembelanjaan Stok Hari Ini</h2>
-                <div className="table-container">
-                  <table>
-                    <thead><tr><th>Deskripsi</th><th>Jumlah</th><th style={{width: '120px'}}>Aksi</th></tr></thead>
-                    <tbody>{dailyDetails.stock_purchases.map(sp => (<tr key={sp.id}><td>{sp.description}</td><td>{formatToRupiah(sp.amount)}</td><td className="action-button-container"><button onClick={() => handleOpenEditModal(sp, 'stock-purchases')} className="action-button edit-button"><FiEdit /></button><button onClick={() => handleDelete('stock-purchases', sp.id)} className="action-button delete-button"><FiTrash2 /></button></td></tr>))}</tbody>
-                  </table>
-                </div>
-              </>
-            )}
-        </>
-    );
-  };
+  const getTitle = () => { if (loading && !summaryData) return "Memuat Laporan Harian..."; const dateObj = new Date(selectedDate + 'T00:00:00'); return `Laporan Harian (${dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })})`; };
+  const renderContent = () => { if (loading) return <p>Memuat data...</p>; if (error) return <p className="error">{error}</p>; if (!summaryData || !dailyDetails) return <p>Tidak ada data untuk ditampilkan.</p>; return (<><h2>Ringkasan</h2><div className="report-grid"><div className="report-card"><h3 style={{color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>Laba Bersih Final</h3><p style={{ color: summaryData.laba_bersih_final < 0 ? '#e74c3c' : '#27ae60', fontWeight: 'bold' }}>{formatToRupiah(summaryData.laba_bersih_final)}</p></div><div className="report-card"><h3>Total Pendapatan</h3><p>{formatToRupiah(summaryData.total_pendapatan)}</p></div><div className="report-card"><h3>Total Pengeluaran</h3><p style={{ color: '#e74c3c' }}>{formatToRupiah(summaryData.total_pengeluaran)}</p></div><div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div></div>{currentUser && currentUser.role !== 'kasir' && (<div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}><div><h2>Tambah Pemasukan</h2><form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/transactions/', { customer_name: txCustomerName, description: txDesc, revenue: parseFloat(txRevenue), cost_of_goods: parseFloat(txCost) || 0, technician_name: txTechnician || null, commission_percentage: parseFloat(txCommission) || null, work_category: txWorkCategory, device_category: txDeviceCategory, part_category: txPartCategory }, () => { setTxCustomerName(''); setTxDesc(''); setTxRevenue(''); setTxCost(''); setTxTechnician(''); setTxCommission(''); setTxWorkCategory(''); setTxDeviceCategory(''); setTxPartCategory(''); }); }} className="form-section"><input type="text" placeholder="Nama Pelanggan (Opsional)" value={txCustomerName} onChange={e => setTxCustomerName(e.target.value)} /><select value={txDeviceCategory} onChange={handleDeviceCategoryChange} required><option value="">-- Pilih Kategori Perangkat --</option>{deviceCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select><select value={txPartCategory} onChange={e => setTxPartCategory(e.target.value)} required disabled={!txDeviceCategory}><option value="">-- Pilih Kategori Part/Servis --</option>{txDeviceCategory && partsCategoriesMap[txDeviceCategory]?.map(part => (<option key={part} value={part}>{part}</option>))}</select><input type="text" placeholder="Deskripsi Detail" value={txDesc} onChange={e => setTxDesc(e.target.value)} required /><input type="text" placeholder="Pendapatan (Rp)" value={formatToRupiah(txRevenue)} onChange={e => handleNumericInputChange(e.target.value, setTxRevenue)} required /><small style={{color: '#95a5a6', marginTop: '-10px', marginBottom: '10px', display: 'block'}}>Total yg dibayar customer</small><input type="text" placeholder="Modal (Rp)" value={formatToRupiah(txCost)} onChange={e => handleNumericInputChange(e.target.value, setTxCost)} /><small style={{color: '#95a5a6', marginTop: '-10px', marginBottom: '10px', display: 'block'}}>Harga beli part/barang</small><input type="text" placeholder="Nama Teknisi (Opsional)" value={txTechnician} onChange={e => setTxTechnician(e.target.value)} /><input type="number" placeholder="Komisi % (Opsional, cth: 15)" value={txCommission} onChange={e => setTxCommission(e.target.value)} /><button type="submit">Tambah</button></form></div><div><h2>Tambah Beban Operasional</h2><form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/expenses/', { description: exDesc, amount: parseFloat(exAmount) }, () => { setExDesc(''); setExAmount(''); }); }} className="form-section"><input type="text" placeholder="Deskripsi (cth: Upah Mario)" value={exDesc} onChange={e => setExDesc(e.target.value)} required /><input type="text" placeholder="Jumlah (Rp)" value={formatToRupiah(exAmount)} onChange={e => handleNumericInputChange(e.target.value, setExAmount)} required /><button type="submit">Tambah</button></form></div><div><h2>Tambah Pembelanjaan Stok</h2><form onSubmit={(e) => { e.preventDefault(); handleApiSubmit('/stock-purchases/', { description: spDesc, amount: parseFloat(spAmount) }, () => { setSpDesc(''); setSpAmount(''); }); }} className="form-section"><input type="text" placeholder="Nama Barang (cth: Baterai Lenovo)" value={spDesc} onChange={e => setSpDesc(e.target.value)} required /><input type="text" placeholder="Harga Beli (Rp)" value={formatToRupiah(spAmount)} onChange={e => handleNumericInputChange(e.target.value, setSpAmount)} required /><button type="submit">Tambah</button></form></div></div>)}<h2>Detail Pemasukan Hari Ini</h2><div className="table-container"><table><thead><tr><th>Pelanggan</th><th>Deskripsi</th><th>Pendapatan</th><th>Metode Bayar</th><th>Modal</th><th>Teknisi</th><th>Komisi %</th><th>Pemasukan Teknisi</th>{currentUser && currentUser.role !== 'kasir' && (<th style={{width: '120px'}}>Aksi</th>)}</tr></thead><tbody>{dailyDetails.transactions.map(tx => { const keuntungan = tx.revenue - tx.cost_of_goods; const komisiRp = tx.commission_percentage && keuntungan > 0 ? (keuntungan * (tx.commission_percentage / 100)) : 0; return (<tr key={tx.id}><td>{tx.customer_name || '-'}</td><td>{tx.description}</td><td>{formatToRupiah(tx.revenue)}</td><td>{tx.payment_method || 'Tunai'}</td><td>{formatToRupiah(tx.cost_of_goods)}</td><td>{tx.technician_name || '-'}</td><td>{tx.commission_percentage ? `${tx.commission_percentage}%` : '-'}</td><td>{formatToRupiah(komisiRp)}</td>{currentUser && currentUser.role !== 'kasir' && (<td className="action-button-container"><button onClick={() => handleOpenEditModal(tx, 'transactions')} className="action-button edit-button"><FiEdit /></button><button onClick={() => handleDelete('transactions', tx.id)} className="action-button delete-button"><FiTrash2 /></button></td>)}</tr>); })}</tbody></table></div>{currentUser && currentUser.role !== 'kasir' && (<><h2 style={{ marginTop: '30px' }}>Detail Beban Operasional Hari Ini</h2><div className="table-container"><table><thead><tr><th>Deskripsi</th><th>Jumlah</th><th style={{width: '120px'}}>Aksi</th></tr></thead><tbody>{dailyDetails.expenses.map(ex => (<tr key={ex.id}><td>{ex.description}</td><td>{formatToRupiah(ex.amount)}</td><td className="action-button-container"><button onClick={() => handleOpenEditModal(ex, 'expenses')} className="action-button edit-button"><FiEdit /></button><button onClick={() => handleDelete('expenses', ex.id)} className="action-button delete-button"><FiTrash2 /></button></td></tr>))}</tbody></table></div><h2 style={{ marginTop: '30px' }}>Detail Pembelanjaan Stok Hari Ini</h2><div className="table-container"><table><thead><tr><th>Deskripsi</th><th>Jumlah</th><th style={{width: '120px'}}>Aksi</th></tr></thead><tbody>{dailyDetails.stock_purchases.map(sp => (<tr key={sp.id}><td>{sp.description}</td><td>{formatToRupiah(sp.amount)}</td><td className="action-button-container"><button onClick={() => handleOpenEditModal(sp, 'stock-purchases')} className="action-button edit-button"><FiEdit /></button><button onClick={() => handleDelete('stock-purchases', sp.id)} className="action-button delete-button"><FiTrash2 /></button></td></tr>))}</tbody></table></div></>)}</>); };
   
   return (
     <div className="container">
