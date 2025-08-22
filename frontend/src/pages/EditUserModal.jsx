@@ -20,31 +20,38 @@ const EditUserModal = ({ token, user, onClose, onSave }) => {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setError('');
-    
-    const payload = {
-        username: formData.username,
-        full_name: formData.full_name,
-        role: formData.role
-    };
-    
-    if (formData.password && formData.password.trim() !== '') {
-        payload.password = formData.password;
-    }
+  e.preventDefault();
+  setIsSaving(true);
+  setError('');
 
-    try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
-	await axios.put(apiUrl, payload, ...);
-      onSave();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Gagal menyimpan perubahan.');
-      console.error("Error saving user:", err.response?.data || err);
-    } finally {
-      setIsSaving(false);
-    }
+  const payload = {
+      username: formData.username,
+      full_name: formData.full_name,
+      role: formData.role
   };
+  
+  if (formData.password && formData.password.trim() !== '') {
+      payload.password = formData.password;
+  }
+
+  try {
+    // BARIS-BARIS YANG DIPERBAIKI ADA DI SINI
+    const endpoint = `/users/${user.id}`; // Tentukan endpoint di sini
+    const apiUrl = `${import.meta.env.VITE_API_BASE_URL}${endpoint}`;
+    
+    await axios.put(apiUrl, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    // AKHIR PERBAIKAN
+
+    onSave();
+  } catch (err) {
+    setError(err.response?.data?.detail || 'Gagal menyimpan perubahan.');
+    console.error("Error saving user:", err.response?.data || err);
+  } finally {
+    setIsSaving(false);
+  }
+};
   
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
