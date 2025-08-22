@@ -12,7 +12,7 @@ export const UserProvider = ({ children, token }) => {
     const fetchCurrentUser = async () => {
       if (token) {
         try {
-          const response = await axios.get('http://127.0.0.1:8000/users/me', {
+          const response = await axios.get('/api/users/me', {
             headers: { Authorization: `Bearer ${token}` },
           });
           setCurrentUser(response.data);

@@ -25,7 +25,7 @@ function LoginPage({ setToken }) {
       // 1. Kita membuat URL API secara dinamis dari environment variable.
       //    Saat di Vercel, ini akan menjadi "/api/token".
       //    Saat di lokal, ini juga akan menjadi "/api/token" (jika Anda menjalankan dengan Vite dev server).
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/token`;
+      const apiUrl = "/api/token";
 
       // 2. Kita menggunakan apiUrl yang sudah benar, bukan lagi alamat hardcode 'http://127.0.0.1:8000/token'
       const response = await axios.post(apiUrl, params, {
