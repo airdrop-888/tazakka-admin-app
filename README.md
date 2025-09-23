@@ -94,6 +94,6 @@ Pastikan Anda sudah menginstal Node.js dan npm di komputer Anda.
 
 ### 📬 Kontak
 
-Mario Atmaja Nugraha - [Portfolio Anda]([https://link-portfolio.com](https://github.com/airdrop-888)) - teamproject888official@gmail.com
+Mario Atmaja Nugraha - [Portfolio Anda](https://github.com/airdrop-888) - teamproject888official@gmail.com
 
 Link Proyek: [https://github.com/airdrop-888/tazakka-admin-app](https://github.com/airdrop-888/tazakka-admin-app)
