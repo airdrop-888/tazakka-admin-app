@@ -7,12 +7,9 @@
 
 Aplikasi dasbor admin untuk Tazakka Group Service yang dibangun untuk mempermudah pengelolaan transaksi, layanan, dan suku cadang.
 
-![Tazakka Admin App Screenshot](https://i.imgur.com/your-screenshot-url.png)
-*(**Saran**: Ganti URL di atas dengan URL screenshot aplikasi Anda. Anda bisa drag & drop gambar langsung ke editor GitHub untuk mengunggahnya)*
+<img width="1599" height="745" alt="admin panel" src="https://github.com/user-attachments/assets/2441468a-0574-4b5a-933b-16b406266918" />
 
 ### ✨ [Live Demo](https://tazakka-admin-app.vercel.app/)
-
-*(**Saran**: Ganti URL di atas dengan link Vercel Anda yang sudah di-deploy)*
 
 ---
 
@@ -45,7 +42,6 @@ Proyek ini adalah sebuah dasbor admin yang berfungsi sebagai sistem Point of Sal
 -   **Frontend**:
     -   [React.js](https://reactjs.org/)
     -   [Vite](https://vitejs.dev/)
-    -   Styling: (Contoh: [Tailwind CSS](https://tailwindcss.com/)) *(ganti jika menggunakan yang lain)*
 -   **Backend & Database**:
     -   [Supabase](https://supabase.io/) (Database PostgreSQL, Otentikasi, dan API)
 -   **Deployment**:
@@ -98,6 +94,6 @@ Pastikan Anda sudah menginstal Node.js dan npm di komputer Anda.
 
 ### 📬 Kontak
 
-Mario Atmaja Nugraha - [Portfolio Anda](https://link-portfolio.com) - email@anda.com
+Mario Atmaja Nugraha - [Portfolio Anda](https://github.com/airdrop-888) - teamproject888official@gmail.com
 
 Link Proyek: [https://github.com/airdrop-888/tazakka-admin-app](https://github.com/airdrop-888/tazakka-admin-app)
