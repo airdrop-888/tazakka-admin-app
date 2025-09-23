@@ -58,31 +58,38 @@ const MainLayout = ({ children }) => {
           )}
         </div>
 		
-        <NavLink to="/kasir" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-          <FiShoppingCart />
-          <span>Kasir</span>
-        </NavLink>
-        
-        {/* Tambahan `end` di NavLink untuk root path agar tidak aktif di path lain */}
+        {/* === AWAL BLOK NAVIGASI YANG DIPERBARUI === */}
+
+        {/* HANYA tampil jika user BUKAN pemilik */}
+        {currentUser && currentUser.role !== 'pemilik' && (
+          <NavLink to="/kasir" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+            <FiShoppingCart />
+            <span>Kasir</span>
+          </NavLink>
+        )}
+                
         <NavLink to="/" end className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
           <FiGrid />
           <span>Dashboard</span>
         </NavLink>
-        
-        {/* Logika pembatasan akses menu berdasarkan role sudah benar */}
+                
+        {/* Tampil jika BUKAN kasir (admin, pengelola, dan pemilik bisa lihat) */}
         {currentUser && currentUser.role !== 'kasir' && (
             <NavLink to="/analytics" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
               <FiBarChart2 />
               <span>Analytics</span>
             </NavLink>
         )}
-        
+                
+        {/* HANYA tampil jika user adalah pengelola */}
         {currentUser && currentUser.role === 'pengelola' && (
             <NavLink to="/manage-users" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
               <FiUsers />
               <span>Kelola Staf</span>
             </NavLink>
         )}
+
+        {/* === AKHIR BLOK NAVIGASI YANG DIPERBARUI === */}
         
         <button onClick={handleLogoutClick} className="logout-button">
           <FiLogOut />

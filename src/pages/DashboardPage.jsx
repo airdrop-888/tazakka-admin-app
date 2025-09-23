@@ -109,7 +109,7 @@ function DashboardPage() {
     };
 
     fetchData();
-  }, [selectedDate]); // <-- Dijalankan hanya saat selectedDate berubah
+  }, [selectedDate, currentUser]); // <-- Dijalankan saat tanggal atau user berubah
 
   // --- Fungsi-fungsi Handler (Penambahan, Penghapusan, Ekspor, dll.) ---
   const handleAddTransaction = async (e) => {
@@ -202,12 +202,18 @@ function DashboardPage() {
         <h1>{getTitle()}</h1>
         <div className="filter-controls">
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-          {currentUser && currentUser.role !== 'kasir' && (
-            <>
-              <button onClick={() => setShowImportModal(true)} className="btn btn-warning">Import Data</button>
-              <button onClick={handleExportXLSX} className="btn btn-success">Download Laporan</button>
-            </>
+          
+          {/* --- PERUBAHAN 1: Logika Tombol Dipisah --- */}
+          {/* Tombol Import: HANYA untuk pengelola dan admin */}
+          {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+            <button onClick={() => setShowImportModal(true)} className="btn btn-warning">Import Data</button>
           )}
+          {/* Tombol Download: Untuk pengelola, admin, dan pemilik */}
+          {currentUser && currentUser.role !== 'kasir' && (
+            <button onClick={handleExportXLSX} className="btn btn-success">Download Laporan</button>
+          )}
+          {/* --- AKHIR PERUBAHAN 1 --- */}
+
         </div>
       </div>
       
@@ -223,8 +229,9 @@ function DashboardPage() {
               <div className="report-card"><h3>Total Pengeluaran</h3><p style={{ color: '#e74c3c' }}>{formatToRupiah(summaryData.total_pengeluaran)}</p></div>
               <div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div>
             </div>
-
-            {currentUser && currentUser.role !== 'kasir' && (
+            
+            {/* --- PERUBAHAN 2: Form Input Dibatasi untuk Pengelola dan Admin --- */}
+            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
                   <div>
                     <h2>Tambah Pemasukan</h2>
@@ -266,6 +273,7 @@ function DashboardPage() {
                   </div>
               </div>
             )}
+            {/* --- AKHIR PERUBAHAN 2 --- */}
 
             <h2>Detail Pemasukan Hari Ini</h2>
             <div className="table-container">
@@ -275,13 +283,15 @@ function DashboardPage() {
                     <th>Deskripsi</th>
                     <th>Pelanggan</th>
                     <th>Pendapatan</th>
-                    {currentUser && currentUser.role !== 'kasir' && (
+                    {/* --- PERUBAHAN 3: Kolom Aksi Tabel Pemasukan Dibatasi --- */}
+                    {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                         <>
                             <th>Modal</th>
                             <th>Teknisi</th>
                             <th>Aksi</th>
                         </>
                     )}
+                    {/* --- AKHIR PERUBAHAN 3 --- */}
                   </tr>
                 </thead>
                 <tbody>
@@ -290,7 +300,8 @@ function DashboardPage() {
                         <td>{tx.description}</td>
                         <td>{tx.customer_name}</td>
                         <td>{formatToRupiah(tx.revenue)}</td>
-                        {currentUser && currentUser.role !== 'kasir' && (
+                        {/* --- PERUBAHAN 4: Isi Kolom Aksi Tabel Pemasukan Dibatasi --- */}
+                        {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                             <>
                                 <td>{formatToRupiah(tx.cost_of_goods)}</td>
                                 <td>{tx.technician_name || '-'}</td>
@@ -300,13 +311,15 @@ function DashboardPage() {
                                 </td>
                             </>
                         )}
+                        {/* --- AKHIR PERUBAHAN 4 --- */}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             
-            {currentUser && currentUser.role !== 'kasir' && (
+            {/* --- PERUBAHAN 5: Seluruh Detail Tabel Pengeluaran Dibatasi --- */}
+            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <>
                 <h2 style={{ marginTop: '30px' }}>Detail Beban Operasional Hari Ini</h2>
                 <div className="table-container">
@@ -336,7 +349,6 @@ function DashboardPage() {
                         <tr><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
                     </thead>
                     <tbody>
-                        {/* --- INI ADALAH BAGIAN YANG DIPERBAIKI --- */}
                         {dailyDetails.stockPurchases.map(sp => (
                             <tr key={sp.id}>
                                 <td>{sp.description}</td>
@@ -352,6 +364,7 @@ function DashboardPage() {
                 </div>
               </>
             )}
+            {/* --- AKHIR PERUBAHAN 5 --- */}
         </>
       )}
 
@@ -363,4 +376,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default DashboardPage;```
