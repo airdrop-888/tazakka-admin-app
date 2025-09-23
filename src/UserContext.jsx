@@ -1,4 +1,4 @@
-// frontend/src/UserContext.jsx (VERSI FINAL YANG DIREKOMENDASIKAN)
+// frontend/src/UserContext.jsx (VERSI FINAL DENGAN LOGIKA RENDERING YANG DISEMPURNAKAN)
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
@@ -21,7 +21,10 @@ export const UserProvider = ({ session, children }) => {
             .eq('id', session.user.id)          // yang cocok dengan ID user login
             .single();                         // dan harapkan hanya satu hasil
 
-          if (error) throw error;
+          if (error) {
+            // Jika ada error (misalnya RLS gagal), lempar error agar bisa ditangkap
+            throw error;
+          }
 
           if (data) {
             // Gabungkan data profil dengan data sesi
@@ -34,10 +37,11 @@ export const UserProvider = ({ session, children }) => {
           console.error("Gagal mengambil data profil user:", error);
           setUserProfile(null);
         } finally {
+          // Apapun yang terjadi, proses loading selesai
           setLoading(false);
         }
       } else {
-        // Jika tidak ada sesi (logout), pastikan profil kosong
+        // Jika tidak ada sesi (logout), pastikan profil kosong dan loading selesai
         setUserProfile(null);
         setLoading(false);
       }
@@ -46,12 +50,14 @@ export const UserProvider = ({ session, children }) => {
     fetchUserProfile();
   }, [session]); // Jalankan ulang setiap kali sesi berubah
 
-  // --- PERBAIKAN DI SINI ---
-  // Selalu sediakan value ke provider.
-  // Komponen anak (seperti MainLayout) akan menampilkan "Memuat..." jika value-nya masih null.
+  // --- PENYEMPURNAAN UTAMA DI SINI ---
+  // Kita sekarang menyediakan value ke provider, TAPI kita hanya merender komponen 
+  // anak (`children`) setelah proses loading selesai (`!loading`).
+  // Ini adalah cara paling aman untuk memastikan MainLayout dan komponen lainnya
+  // tidak pernah mencoba mengakses data user sebelum data tersebut benar-benar siap.
   return (
     <UserContext.Provider value={userProfile}>
-      {children}
+      {!loading && children}
     </UserContext.Provider>
   );
 };
