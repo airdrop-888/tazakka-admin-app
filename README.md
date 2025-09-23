@@ -1,12 +1,103 @@
-# React + Vite
+# Tazakka Group Service - Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=FFFFFF)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=FFFFFF)](https://supabase.io/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-Currently, two official plugins are available:
+Aplikasi dasbor admin untuk Tazakka Group Service yang dibangun untuk mempermudah pengelolaan transaksi, layanan, dan suku cadang.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Tazakka Admin App Screenshot](https://i.imgur.com/your-screenshot-url.png)
+*(**Saran**: Ganti URL di atas dengan URL screenshot aplikasi Anda. Anda bisa drag & drop gambar langsung ke editor GitHub untuk mengunggahnya)*
 
-## Expanding the ESLint configuration
+### ✨ [Live Demo](https://tazakka-admin-app.vercel.app/)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+*(**Saran**: Ganti URL di atas dengan link Vercel Anda yang sudah di-deploy)*
+
+---
+
+### 📝 Daftar Isi
+
+- [Tentang Proyek](#tentang-proyek)
+  - [Fitur Utama](#fitur-utama)
+  - [Teknologi yang Digunakan](#teknologi-yang-digunakan)
+- [Panduan Instalasi](#panduan-instalasi)
+  - [Prasyarat](#prasyarat)
+  - [Instalasi Lokal](#instalasi-lokal)
+- [Kontak](#kontak)
+
+---
+
+### 🚀 Tentang Proyek
+
+Proyek ini adalah sebuah dasbor admin yang berfungsi sebagai sistem Point of Sale (POS) atau kasir. Dibuat untuk membantu "Tazakka Group Service" dalam mengelola data transaksi, daftar jasa perbaikan, dan stok suku cadang secara efisien dan terpusat.
+
+#### Fitur Utama
+
+-   **🖥️ Kasir (Point of Sale)**: Antarmuka kasir untuk menambahkan produk atau jasa ke dalam keranjang transaksi.
+-   **📈 Manajemen Transaksi**: Melihat riwayat, mencari, dan mengelola semua data transaksi yang masuk.
+-   **📦 Manajemen Jasa & Produk**: Kemudahan untuk menambah, mengubah, dan menghapus daftar jasa atau produk yang ditawarkan.
+-   **👥 Manajemen Staf**: (Opsional, jika ada) Mengelola akun dan hak akses untuk staf.
+-   **📊 Dasbor Analitik**: (Opsional, jika ada) Menampilkan ringkasan pendapatan dan data analitik lainnya.
+
+#### Teknologi yang Digunakan
+
+-   **Frontend**:
+    -   [React.js](https://reactjs.org/)
+    -   [Vite](https://vitejs.dev/)
+    -   Styling: (Contoh: [Tailwind CSS](https://tailwindcss.com/)) *(ganti jika menggunakan yang lain)*
+-   **Backend & Database**:
+    -   [Supabase](https://supabase.io/) (Database PostgreSQL, Otentikasi, dan API)
+-   **Deployment**:
+    -   [Vercel](https://vercel.com/)
+
+---
+
+### 🛠️ Panduan Instalasi
+
+Ikuti langkah-langkah berikut untuk menjalankan proyek ini di lingkungan lokal Anda.
+
+#### Prasyarat
+
+Pastikan Anda sudah menginstal Node.js dan npm di komputer Anda.
+-   **Node.js** (v16 atau lebih baru)
+-   **npm**
+    ```sh
+    npm install npm@latest -g
+    ```
+
+#### Instalasi Lokal
+
+1.  **Clone repositori ini**
+    ```sh
+    git clone https://github.com/airdrop-888/tazakka-admin-app.git
+    ```
+2.  **Masuk ke direktori proyek**
+    ```sh
+    cd tazakka-admin-app
+    ```
+3.  **Install semua dependencies**
+    ```sh
+    npm install
+    ```
+4.  **Konfigurasi Environment Variables**
+    Buat file baru bernama `.env.local` di root folder proyek, lalu isi dengan kredensial Supabase Anda.
+    ```env
+    VITE_SUPABASE_URL="URL_PROYEK_SUPABASE_ANDA"
+    VITE_SUPABASE_ANON_KEY="ANON_KEY_SUPABASE_ANDA"
+    ```
+    *Anda bisa mendapatkan URL dan Kunci Anon dari dasbor Supabase Anda di bagian Settings > API.*
+
+5.  **Jalankan aplikasi**
+    ```sh
+    npm run dev
+    ```
+    Aplikasi akan berjalan di `http://localhost:5173`.
+
+---
+
+### 📬 Kontak
+
+Mario Atmaja Nugraha - [Portfolio Anda](https://link-portfolio.com) - email@anda.com
+
+Link Proyek: [https://github.com/airdrop-888/tazakka-admin-app](https://github.com/airdrop-888/tazakka-admin-app)
