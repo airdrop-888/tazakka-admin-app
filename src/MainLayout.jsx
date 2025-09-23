@@ -58,9 +58,9 @@ const MainLayout = ({ children }) => {
           )}
         </div>
 		
-        {/* === AWAL BLOK NAVIGASI YANG DIPERBARUI === */}
+        {/* === AWAL BLOK NAVIGASI DENGAN LOGIKA YANG SUDAH DIVERIFIKASI === */}
 
-        {/* HANYA tampil jika user BUKAN pemilik */}
+        {/* Menu Kasir: Ditampilkan untuk semua role KECUALI 'pemilik'. */}
         {currentUser && currentUser.role !== 'pemilik' && (
           <NavLink to="/kasir" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
             <FiShoppingCart />
@@ -68,12 +68,13 @@ const MainLayout = ({ children }) => {
           </NavLink>
         )}
                 
+        {/* Menu Dashboard: Ditampilkan untuk semua role. */}
         <NavLink to="/" end className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
           <FiGrid />
           <span>Dashboard</span>
         </NavLink>
                 
-        {/* Tampil jika BUKAN kasir (admin, pengelola, dan pemilik bisa lihat) */}
+        {/* Menu Analytics: Ditampilkan untuk semua role KECUALI 'kasir'. */}
         {currentUser && currentUser.role !== 'kasir' && (
             <NavLink to="/analytics" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
               <FiBarChart2 />
@@ -81,7 +82,7 @@ const MainLayout = ({ children }) => {
             </NavLink>
         )}
                 
-        {/* HANYA tampil jika user adalah pengelola */}
+        {/* Menu Kelola Staf: Ditampilkan HANYA untuk role 'pengelola'. */}
         {currentUser && currentUser.role === 'pengelola' && (
             <NavLink to="/manage-users" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
               <FiUsers />
@@ -89,7 +90,7 @@ const MainLayout = ({ children }) => {
             </NavLink>
         )}
 
-        {/* === AKHIR BLOK NAVIGASI YANG DIPERBARUI === */}
+        {/* === AKHIR BLOK NAVIGASI === */}
         
         <button onClick={handleLogoutClick} className="logout-button">
           <FiLogOut />
@@ -104,4 +105,4 @@ const MainLayout = ({ children }) => {
   );
 };
 
-export default MainLayout;
+export default MainLayout;```
