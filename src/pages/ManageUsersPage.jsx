@@ -1,4 +1,4 @@
-// frontend/src/pages/ManageUsersPage.jsx (VERSI FINAL LENGKAP DENGAN DEBUGGING)
+// frontend/src/pages/ManageUsersPage.jsx (VERSI FINAL LENGKAP DENGAN ROLE PEMILIK)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
@@ -47,7 +47,7 @@ const ManageUsersPage = () => {
         return;
     }
 
-    // --- PERBAIKAN: Buat payload dan tampilkan di console untuk debugging ---
+    // Payload yang akan dikirim ke backend, sudah siap menangani role apapun yang dipilih
     const payload = {
       username: username,
       email: `${username}@tazakkagroupservice.com`, // Trik email fiktif yang konsisten
@@ -56,7 +56,6 @@ const ManageUsersPage = () => {
       role: role,
     };
     console.log("Payload yang akan dikirim ke Edge Function:", payload);
-    // ------------------------------------------------------------------------
 
     try {
       // Panggil Edge Function dengan payload yang sudah dibuat
@@ -140,6 +139,7 @@ const ManageUsersPage = () => {
                   <option value="kasir">Staf Kasir</option>
                   <option value="admin">Staf Admin</option>
                   <option value="pengelola">Pengelola</option>
+                  <option value="pemilik">Pemilik</option> 
                 </select>
               </div>
             </div>
