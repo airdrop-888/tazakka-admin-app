@@ -177,7 +177,13 @@ function DashboardPage() {
     const dateObj = new Date(selectedDate + 'T00:00:00');
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth();
+    // Untuk judul di dalam file Excel (e.g., SEPTEMBER)
     const monthName = dateObj.toLocaleString('id-ID', { month: 'long' }).toUpperCase();
+    
+    // --- PERUBAHAN NAMA FILE ---
+    // Untuk nama file (e.g., September)
+    const monthNameForFile = dateObj.toLocaleString('id-ID', { month: 'long' });
+    const capitalizedMonthName = monthNameForFile.charAt(0).toUpperCase() + monthNameForFile.slice(1);
     
     const firstDay = new Date(year, month, 1).toISOString();
     const lastDay = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
@@ -200,7 +206,6 @@ function DashboardPage() {
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
         
         // --- PERBAIKAN FORMAT RUPIAH DI SINI ---
-        // Format ini akan menghasilkan "Rp 1.234.567"
         const rupiahFormat = '"Rp" #,##0';
 
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
@@ -244,22 +249,17 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
-            // Terapkan style header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
-
-            // Terapkan format Rupiah ke kolom yang berisi nilai uang (B, E, F)
             const currencyCols = [1, 4, 5]; // Kolom B, E, F
             for (const C of currencyCols) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 const cell = wsPemasukan[cellRef];
-                // Pastikan sel ada dan tipenya adalah angka ('n')
                 if (cell && cell.t === 'n') {
-                    // Gabungkan style format angka dengan style yang sudah ada (jika ada)
                     cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
                 }
             }
@@ -293,19 +293,15 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
-            // Terapkan style header
             if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow - 1 || R === detailStokHeaderRow) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
                 }
             }
-
-            // Terapkan format Rupiah ke kolom yang berisi nilai uang (B, C)
             const currencyCols = [1, 2]; // Kolom B, C
             for (const C of currencyCols) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
-                // PERBAIKAN TYPO: gunakan wsPengeluaran, bukan wsPemasukan
                 const cell = wsPengeluaran[cellRef];
                  if (cell && cell.t === 'n') {
                     cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
@@ -316,8 +312,9 @@ function DashboardPage() {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, wsPemasukan, "PEMASUKAN");
         XLSX.utils.book_append_sheet(workbook, wsPengeluaran, "PENGELUARAN");
-
-        XLSX.writeFile(workbook, `Laporan_Bulanan_${year}-${String(month + 1).padStart(2, '0')}.xlsx`);
+        
+        // --- PERUBAHAN NAMA FILE ---
+        XLSX.writeFile(workbook, `Laporan_Bulanan-${capitalizedMonthName}-${year}.xlsx`);
 
     } catch (err) {
         setError("Gagal mengunduh file laporan: " + err.message);
