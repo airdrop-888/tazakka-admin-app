@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (Versi Final yang Disempurnakan dan Diperbaiki)
+// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Format Excel)
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -297,7 +297,9 @@ function DashboardPage() {
         const stockPurchases = stockRes.data || [];
 
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
-        const rupiahFormat = '"Rp"#,##0;[Red]-"Rp"#,##0';
+        
+        // --- PERBAIKAN: Format Rupiah yang lebih sesuai dengan standar Akuntansi Excel ---
+        const rupiahFormat = '_("Rp"* #,##0_);_("Rp"* (#,##0);_("Rp"* "-"??_);_(@_)';
         
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
@@ -312,19 +314,17 @@ function DashboardPage() {
             [`LAPORAN PEMASUKAN TAZAKKA - ${monthName} ${year}`],
             [],
             ["RINGKASAN KEUANGAN"],
-            ["Total Pendapatan Kotor", formatToNumber(totalPendapatanKotor)],
-            ["Total Modal Barang Terjual", formatToNumber(totalModal)],
+            ["Total Pendapatan", formatToNumber(totalPendapatanKotor)],
+            ["Total Modal Barang", formatToNumber(totalModal)],
             ["Laba Kotor (Pendapatan - Modal)", formatToNumber(labaKotor)],
             ["Total Komisi Teknisi", formatToNumber(totalKomisi)],
             ["Total Beban Operasional", formatToNumber(totalBebanOperasional)],
             ["LABA BERSIH FINAL", formatToNumber(labaBersihFinal)],
             [],
             ["DETAIL PEMASUKAN"],
-            // --- PERUBAHAN 1 (EXCEL): Menambah header kolom "Jumlah Komisi (Rp)" ---
             ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Jumlah Komisi (Rp)", "Komisi (%)"]
         ];
         transactions.forEach(tx => {
-            // --- PERUBAHAN 2 (EXCEL): Menghitung komisi dalam Rupiah ---
             const commissionAmount = ((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100;
             pemasukanData.push([
                 new Date(tx.transaction_date).toLocaleDateString('id-ID'),
@@ -334,13 +334,12 @@ function DashboardPage() {
                 formatToNumber(tx.revenue),
                 formatToNumber(tx.cost_of_goods),
                 tx.technician_name || '-',
-                formatToNumber(commissionAmount), // Menambahkan data komisi Rupiah
+                formatToNumber(commissionAmount),
                 tx.commission_percentage || 0
             ]);
         });
 
         const wsPemasukan = XLSX.utils.aoa_to_sheet(pemasukanData);
-        // --- PERUBAHAN 3 (EXCEL): Menyesuaikan lebar kolom ---
         wsPemasukan['!cols'] = [{wch:12}, {wch:20}, {wch:35}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:18}, {wch:10}];
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
@@ -351,19 +350,32 @@ function DashboardPage() {
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
-            // --- PERUBAHAN 4 (EXCEL): Menambah kolom komisi (indeks 7) ke daftar format Rupiah ---
-            const currencyCols = [1, 4, 5, 7]; // Kolom B, E, F, H
-            for (const C of currencyCols) {
-                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+            
+            // --- BAGIAN INI DIPERBAIKI: Logika pemformatan Rupiah yang lebih Cerdas ---
+            const summaryStartRow = 3; 
+            const summaryEndRow = 8;
+            const detailStartRow = 12;
+
+            if (R >= summaryStartRow && R <= summaryEndRow) {
+                const cellRef = XLSX.utils.encode_cell({ c: 1, r: R });
                 const cell = wsPemasukan[cellRef];
                 if (cell && cell.t === 'n') {
-                    cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
+                    cell.s = { numFmt: rupiahFormat };
+                }
+            }
+
+            if (R >= detailStartRow) {
+                const detailCurrencyCols = [4, 5, 7]; // Kolom E, F, H
+                for (const C of detailCurrencyCols) {
+                    const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                    const cell = wsPemasukan[cellRef];
+                    if (cell && cell.t === 'n') {
+                        cell.s = { numFmt: rupiahFormat };
+                    }
                 }
             }
         }
 
-        const detailBebanHeaderRow = 8;
-        const detailStokHeaderRow = detailBebanHeaderRow + expenses.length + 2;
         let pengeluaranData = [
             [`LAPORAN PENGELUARAN TAZAKKA - ${monthName} ${year}`],
             [],
@@ -390,21 +402,31 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
-            if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow - 1 || R === detailStokHeaderRow) {
+            if (R === 0 || R === 2 || R === 7 || R === 8 + expenses.length + 1 || R === 8 + expenses.length + 2) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
                 }
             }
-            const summaryCellRef = XLSX.utils.encode_cell({c: 1, r: R});
-            const summaryCell = wsPengeluaran[summaryCellRef];
-            if (summaryCell && summaryCell.t === 'n') {
-                summaryCell.s = { ...(summaryCell.s || {}), numFmt: rupiahFormat };
+            
+            // Format Bagian Ringkasan (Kolom B)
+            if (R >= 3 && R <= 5) {
+                const cellRef = XLSX.utils.encode_cell({ c: 1, r: R });
+                const cell = wsPengeluaran[cellRef];
+                if (cell && cell.t === 'n') {
+                    cell.s = { numFmt: rupiahFormat };
+                }
             }
-            const detailCellRef = XLSX.utils.encode_cell({c: 2, r: R});
-            const detailCell = wsPengeluaran[detailCellRef];
-            if (detailCell && detailCell.t === 'n') {
-                detailCell.s = { ...(detailCell.s || {}), numFmt: rupiahFormat };
+            
+            // Format Bagian Detail (Kolom C)
+            const detailBebanStart = 9;
+            const detailStokStart = detailBebanStart + expenses.length + 2;
+            if ((R >= detailBebanStart && R < detailBebanStart + expenses.length) || (R >= detailStokStart && R < detailStokStart + stockPurchases.length)) {
+                 const cellRef = XLSX.utils.encode_cell({ c: 2, r: R });
+                 const cell = wsPengeluaran[cellRef];
+                 if (cell && cell.t === 'n') {
+                     cell.s = { numFmt: rupiahFormat };
+                 }
             }
         }
 
@@ -518,7 +540,6 @@ function DashboardPage() {
                         <>
                             <th>Modal</th>
                             <th>Teknisi</th>
-                            {/* --- PERUBAHAN 5 (WEB): Menambah header kolom "Komisi" --- */}
                             <th>Komisi</th>
                             <th>Aksi</th>
                         </>
@@ -527,7 +548,6 @@ function DashboardPage() {
                 </thead>
                 <tbody>
                   {dailyDetails.transactions.map(tx => {
-                    // --- PERUBAHAN 6 (WEB): Menghitung komisi untuk ditampilkan di tabel ---
                     const commissionAmount = ((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100;
                     return (
                         <tr key={tx.id}>
@@ -538,7 +558,6 @@ function DashboardPage() {
                                 <>
                                     <td>{formatToRupiah(tx.cost_of_goods)}</td>
                                     <td>{tx.technician_name || '-'}</td>
-                                    {/* Menampilkan data komisi dalam Rupiah */}
                                     <td>{formatToRupiah(commissionAmount)}</td>
                                     <td>
                                         <button onClick={() => handleOpenEditModal(tx, 'transactions')} className="btn-icon" title="Edit"><FiEdit /></button>
