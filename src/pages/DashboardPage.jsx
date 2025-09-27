@@ -318,24 +318,34 @@ function DashboardPage() {
               </table>
             </div>
             
-            {/* --- PERUBAHAN 5: Seluruh Detail Tabel Pengeluaran Dibatasi --- */}
-            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+            {/* --- KODE PERBAIKAN DIMULAI DI SINI --- */}
+            {currentUser && (currentUser.role === 'pemilik' || currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <>
                 <h2 style={{ marginTop: '30px' }}>Detail Beban Operasional Hari Ini</h2>
                 <div className="table-container">
                   <table>
                     <thead>
-                        <tr><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
+                        <tr>
+                            <th>Deskripsi</th>
+                            <th>Jumlah</th>
+                            {/* Kolom Aksi hanya untuk pengelola & admin */}
+                            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+                                <th>Aksi</th>
+                            )}
+                        </tr>
                     </thead>
                     <tbody>
                         {dailyDetails.expenses.map(ex => (
                             <tr key={ex.id}>
                                 <td>{ex.description}</td>
                                 <td>{formatToRupiah(ex.amount)}</td>
-                                <td>
-                                    <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon"><FiEdit /></button>
-                                    <button onClick={() => handleDelete('expenses', ex.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
-                                </td>
+                                {/* Tombol Aksi hanya untuk pengelola & admin */}
+                                {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+                                    <td>
+                                        <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon"><FiEdit /></button>
+                                        <button onClick={() => handleDelete('expenses', ex.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -346,17 +356,27 @@ function DashboardPage() {
                 <div className="table-container">
                   <table>
                     <thead>
-                        <tr><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
+                        <tr>
+                            <th>Deskripsi</th>
+                            <th>Jumlah</th>
+                            {/* Kolom Aksi hanya untuk pengelola & admin */}
+                            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+                                <th>Aksi</th>
+                            )}
+                        </tr>
                     </thead>
                     <tbody>
                         {dailyDetails.stockPurchases.map(sp => (
                             <tr key={sp.id}>
                                 <td>{sp.description}</td>
                                 <td>{formatToRupiah(sp.amount)}</td>
-                                <td>
-                                    <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon"><FiEdit /></button>
-                                    <button onClick={() => handleDelete('stock_purchases', sp.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
-                                </td>
+                                {/* Tombol Aksi hanya untuk pengelola & admin */}
+                                {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+                                    <td>
+                                        <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon"><FiEdit /></button>
+                                        <button onClick={() => handleDelete('stock_purchases', sp.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -364,7 +384,7 @@ function DashboardPage() {
                 </div>
               </>
             )}
-            {/* --- AKHIR PERUBAHAN 5 --- */}
+            {/* --- KODE PERBAIKAN SELESAI DI SINI --- */}
         </>
       )}
 
