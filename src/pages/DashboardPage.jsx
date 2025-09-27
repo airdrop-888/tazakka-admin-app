@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useUser } from '../UserContext';
 import ImportModal from './ImportModal';
 import EditModal from './EditItemModal';
-import { FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiCopy } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 
 // --- Helper Functions ---
@@ -15,6 +15,15 @@ const formatToRupiah = (number) => {
     if (isNaN(numericValue)) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numericValue);
 };
+
+// Helper untuk format WhatsApp (tanpa 'Rp' dan spasi)
+const formatToSimpleNumber = (number) => {
+    if (number === null || number === undefined) return '0';
+    const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
+    if (isNaN(numericValue)) return '0';
+    return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(numericValue);
+};
+
 
 // Helper untuk mengubah angka ke format numerik murni untuk Excel
 const formatToNumber = (number) => {
@@ -98,14 +107,36 @@ function DashboardPage() {
         const stockPurchases = stockPurchasesRes.data || [];
         
         setDailyDetails({ transactions, expenses, stockPurchases });
-
+        
+        // --- LOGIKA PERHITUNGAN BARU ---
         const total_pendapatan = transactions.reduce((sum, tx) => sum + (tx.revenue || 0), 0);
+        const total_modal = transactions.reduce((sum, tx) => sum + (tx.cost_of_goods || 0), 0);
+        
+        const total_komisi = transactions.reduce((sum, tx) => {
+            const profit = (tx.revenue || 0) - (tx.cost_of_goods || 0);
+            const commission = (profit * (tx.commission_percentage || 0)) / 100;
+            return sum + commission;
+        }, 0);
+        
         const total_beban_operasional = expenses.reduce((sum, ex) => sum + (ex.amount || 0), 0);
         const total_pembelanjaan_stok = stockPurchases.reduce((sum, sp) => sum + (sp.amount || 0), 0);
+        
+        // Total pengeluaran di kartu ringkasan adalah Beban + Belanja Stok
         const total_pengeluaran = total_beban_operasional + total_pembelanjaan_stok;
-        const laba_bersih_final = total_pendapatan - total_pengeluaran;
+        
+        // Laba bersih sesuai logika WhatsApp: Pendapatan - Modal - Komisi - Beban Operasional
+        const laba_bersih_final = total_pendapatan - total_modal - total_komisi - total_beban_operasional;
 
-        setSummaryData({ total_pendapatan, total_beban_operasional, total_pengeluaran, laba_bersih_final });
+        setSummaryData({ 
+            total_pendapatan, 
+            total_beban_operasional, 
+            total_pengeluaran, 
+            laba_bersih_final,
+            total_modal,
+            total_komisi,
+            total_pembelanjaan_stok
+        });
+        // --- AKHIR LOGIKA PERHITUNGAN BARU ---
 
       } catch (err) {
         setError('Gagal memuat data. Periksa koneksi Anda.');
@@ -169,6 +200,86 @@ function DashboardPage() {
         else setSelectedDate(new Date(selectedDate).toISOString().split('T')[0]);
     }
   };
+  
+  // --- FUNGSI BARU UNTUK COPY LAPORAN ---
+  const handleCopyReport = () => {
+    if (!summaryData || !dailyDetails) {
+        alert("Data laporan belum dimuat sepenuhnya.");
+        return;
+    }
+
+    const dateObj = new Date(selectedDate + 'T00:00:00');
+    const formattedDate = dateObj.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    let reportString = `LAPORAN PEMASUKAN/PENGELUARAN TAZAKKA\n`;
+    reportString += `Hari,tgl : ${formattedDate}\n\n`;
+
+    // Detail Pemasukan
+    if (dailyDetails.transactions.length > 0) {
+        dailyDetails.transactions.forEach((tx, index) => {
+            const keuntungan = (tx.revenue || 0) - (tx.cost_of_goods || 0);
+            const komisi = (keuntungan * (tx.commission_percentage || 0)) / 100;
+            const bersih = keuntungan - komisi;
+
+            reportString += `${index + 1}. ${tx.description}\n`;
+            reportString += `Pendapatan: ${formatToSimpleNumber(tx.revenue)}\n`;
+            if (tx.cost_of_goods > 0) {
+              reportString += `- Modal: ${formatToSimpleNumber(tx.cost_of_goods)}\n`;
+            }
+            reportString += `Keuntungan: ${formatToSimpleNumber(keuntungan)}\n`;
+            if (tx.commission_percentage > 0) {
+              reportString += `Upah Teknis ${tx.commission_percentage}%: ${formatToSimpleNumber(komisi)}\n`;
+              reportString += `Bersih: ${formatToSimpleNumber(bersih)}\n`;
+            }
+            reportString += `\n`;
+        });
+    }
+
+    // Detail Beban Operasional
+    if (dailyDetails.expenses.length > 0) {
+        reportString += `Beban Operasional:\n`;
+        dailyDetails.expenses.forEach(ex => {
+            reportString += `- ${ex.description} ${formatToSimpleNumber(ex.amount)}\n`;
+        });
+        reportString += `\n`;
+    }
+    
+    // Total Keseluruhan
+    const labaKotor = summaryData.total_pendapatan - summaryData.total_modal;
+    reportString += `Total keseluruhan\n`;
+    reportString += `- Pendapatan: ${formatToSimpleNumber(summaryData.total_pendapatan)}\n`;
+    reportString += `- Modal: ${formatToSimpleNumber(summaryData.total_modal)}\n`;
+    reportString += `- Keuntungan (Laba Kotor): ${formatToSimpleNumber(labaKotor)}\n`;
+    if (summaryData.total_komisi > 0) {
+        reportString += `- Total Komisi Teknisi: ${formatToSimpleNumber(summaryData.total_komisi)}\n`;
+    }
+    reportString += `- Total Beban Operasional: ${formatToSimpleNumber(summaryData.total_beban_operasional)}\n`;
+    reportString += `- Laba Bersih: ${formatToSimpleNumber(summaryData.laba_bersih_final)}\n\n`;
+
+    // Detail Pembelanjaan Stok
+    if (dailyDetails.stockPurchases.length > 0) {
+        reportString += `Laporan Pembelanjaan/Pengeluaran\n`;
+        reportString += `Hari, tgl : ${formattedDate}\n`;
+        let totalPembelanjaan = 0;
+        dailyDetails.stockPurchases.forEach(sp => {
+            reportString += `- ${sp.description} ${formatToSimpleNumber(sp.amount)}\n`;
+            totalPembelanjaan += sp.amount;
+        });
+        reportString += `Total: ${formatToSimpleNumber(totalPembelanjaan)}\n`;
+    }
+
+    navigator.clipboard.writeText(reportString).then(() => {
+        alert('Laporan harian berhasil disalin ke clipboard!');
+    }).catch(err => {
+        alert('Gagal menyalin laporan.');
+        console.error('Tidak dapat menyalin teks: ', err);
+    });
+  };
 
   const handleExportXLSX = async () => {
     setLoading(true);
@@ -202,11 +313,13 @@ function DashboardPage() {
 
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
         const rupiahFormat = '"Rp"#,##0;[Red]-"Rp"#,##0';
-
+        
+        // NOTE: Perhitungan Laba Bersih di Excel ini mungkin berbeda dengan di dashboard
+        // Jika ingin disamakan, totalKomisi di bawah ini perlu diubah logikanya
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
         const labaKotor = totalPendapatanKotor - totalModal;
-        const totalKomisi = transactions.reduce((sum, tx) => sum + ((tx.revenue * (tx.commission_percentage || 0)) / 100), 0);
+        const totalKomisi = transactions.reduce((sum, tx) => sum + (((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0)) / 100, 0);
         const totalBebanOperasional = expenses.reduce((sum, ex) => sum + ex.amount, 0);
         const totalPembelianStok = stockPurchases.reduce((sum, sp) => sum + sp.amount, 0);
         const totalPengeluaranKeseluruhan = totalBebanOperasional + totalPembelianStok;
@@ -244,19 +357,17 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
-            // Terapkan style untuk header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
-            // Terapkan format Rupiah ke kolom yang berisi angka
-            const currencyCols = [1, 4, 5]; // Kolom B, E, F
+            const currencyCols = [1, 4, 5];
             for (const C of currencyCols) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 const cell = wsPemasukan[cellRef];
-                if (cell && cell.t === 'n') { // Cek jika sel ada dan tipenya adalah angka ('n')
+                if (cell && cell.t === 'n') {
                     cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
                 }
             }
@@ -290,24 +401,17 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
-            // Terapkan style untuk header
             if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow - 1 || R === detailStokHeaderRow) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
                 }
             }
-            
-            // --- INI BAGIAN YANG DIPERBAIKI ---
-            // Logika baru untuk memformat kolom Rupiah secara cerdas
-            // Format Kolom B (index 1) untuk bagian ringkasan
             const summaryCellRef = XLSX.utils.encode_cell({c: 1, r: R});
             const summaryCell = wsPengeluaran[summaryCellRef];
             if (summaryCell && summaryCell.t === 'n') {
                 summaryCell.s = { ...(summaryCell.s || {}), numFmt: rupiahFormat };
             }
-
-            // Format Kolom C (index 2) untuk bagian detail
             const detailCellRef = XLSX.utils.encode_cell({c: 2, r: R});
             const detailCell = wsPengeluaran[detailCellRef];
             if (detailCell && detailCell.t === 'n') {
@@ -346,6 +450,11 @@ function DashboardPage() {
         <div className="filter-controls">
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
           
+          {/* --- TOMBOL COPY BARU DITAMBAHKAN DI SINI --- */}
+          <button onClick={handleCopyReport} className="btn btn-info" title="Salin Laporan Harian">
+            <FiCopy style={{ marginRight: '5px' }} /> Copy Laporan
+          </button>
+
           {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
             <button onClick={() => setShowImportModal(true)} className="btn btn-warning">Import Data</button>
           )}
