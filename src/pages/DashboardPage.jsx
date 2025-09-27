@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Format Excel)
+// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Format Excel yang Andal)
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -298,8 +298,8 @@ function DashboardPage() {
 
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
         
-        // --- PERBAIKAN: Format Rupiah yang lebih sesuai dengan standar Akuntansi Excel ---
-        const rupiahFormat = '_("Rp"* #,##0_);_("Rp"* (#,##0);_("Rp"* "-"??_);_(@_)';
+        // --- PERBAIKAN FINAL: Format Rupiah yang Lebih Sederhana & Andal ---
+        const rupiahFormat = '"Rp"#,##0';
         
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
@@ -351,7 +351,6 @@ function DashboardPage() {
                 }
             }
             
-            // --- BAGIAN INI DIPERBAIKI: Logika pemformatan Rupiah yang lebih Cerdas ---
             const summaryStartRow = 3; 
             const summaryEndRow = 8;
             const detailStartRow = 12;
@@ -409,7 +408,6 @@ function DashboardPage() {
                 }
             }
             
-            // Format Bagian Ringkasan (Kolom B)
             if (R >= 3 && R <= 5) {
                 const cellRef = XLSX.utils.encode_cell({ c: 1, r: R });
                 const cell = wsPengeluaran[cellRef];
@@ -418,7 +416,6 @@ function DashboardPage() {
                 }
             }
             
-            // Format Bagian Detail (Kolom C)
             const detailBebanStart = 9;
             const detailStokStart = detailBebanStart + expenses.length + 2;
             if ((R >= detailBebanStart && R < detailBebanStart + expenses.length) || (R >= detailStokStart && R < detailStokStart + stockPurchases.length)) {
