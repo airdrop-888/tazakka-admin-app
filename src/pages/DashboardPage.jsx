@@ -16,6 +16,15 @@ const formatToRupiah = (number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numericValue);
 };
 
+// Helper baru untuk format Rupiah tanpa 'Rp' untuk Excel
+const formatToNumber = (number) => {
+    if (number === null || number === undefined) return 0;
+    const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
+    if (isNaN(numericValue)) return 0;
+    return numericValue;
+};
+
+
 const parseRupiah = (rupiahString) => String(rupiahString).replace(/[^0-9]/g, '');
 
 const getLocalDate = () => {
@@ -68,7 +77,6 @@ function DashboardPage() {
       
       setLoading(true);
       setError('');
-      // Reset data sebelum fetch baru untuk mencegah tampilan data lama
       setDailyDetails(null);
       setSummaryData(null);
 
@@ -109,7 +117,7 @@ function DashboardPage() {
     };
 
     fetchData();
-  }, [selectedDate, currentUser]); // <-- Dijalankan saat tanggal atau user berubah
+  }, [selectedDate, currentUser]);
 
   // --- Fungsi-fungsi Handler (Penambahan, Penghapusan, Ekspor, dll.) ---
   const handleAddTransaction = async (e) => {
@@ -164,25 +172,128 @@ function DashboardPage() {
     }
   };
 
+  // --- INI ADALAH FUNGSI handleExportXLSX YANG BARU ---
   const handleExportXLSX = async () => {
-    const dateObj = new Date(selectedDate);
+    setLoading(true);
+    setError('');
+
+    const dateObj = new Date(selectedDate + 'T00:00:00');
     const year = dateObj.getFullYear();
-    const month = dateObj.getMonth() + 1;
-    const firstDay = new Date(year, month - 1, 1).toISOString();
-    const lastDay = new Date(year, month, 0, 23, 59, 59).toISOString();
+    const month = dateObj.getMonth(); // 0-11
+    const monthName = dateObj.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase();
+    
+    const firstDay = new Date(year, month, 1).toISOString();
+    const lastDay = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
     
     try {
-        const { data, error } = await supabase.from('transactions').select('*').gte('transaction_date', firstDay).lte('transaction_date', lastDay);
-        if (error) throw error;
+        const [transRes, expRes, stockRes] = await Promise.all([
+            supabase.from('transactions').select('*').gte('transaction_date', firstDay).lte('transaction_date', lastDay),
+            supabase.from('operational_expenses').select('*').gte('expense_date', firstDay).lte('expense_date', lastDay),
+            supabase.from('stock_purchases').select('*').gte('purchase_date', firstDay).lte('purchase_date', lastDay)
+        ]);
 
-        const worksheet = XLSX.utils.json_to_sheet(data);
+        if (transRes.error) throw transRes.error;
+        if (expRes.error) throw expRes.error;
+        if (stockRes.error) throw stockRes.error;
+
+        const transactions = transRes.data || [];
+        const expenses = expRes.data || [];
+        const stockPurchases = stockRes.data || [];
+
+        // Kalkulasi Summary
+        const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
+        const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
+        const labaKotor = totalPendapatanKotor - totalModal;
+        const totalKomisi = transactions.reduce((sum, tx) => {
+            const commission = (tx.revenue * (tx.commission_percentage || 0)) / 100;
+            return sum + commission;
+        }, 0);
+        const totalBebanOperasional = expenses.reduce((sum, ex) => sum + ex.amount, 0);
+        const totalPembelianStok = stockPurchases.reduce((sum, sp) => sum + sp.amount, 0);
+        const totalPengeluaranKeseluruhan = totalBebanOperasional + totalPembelianStok;
+        const labaBersihFinal = labaKotor - totalKomisi - totalBebanOperasional;
+
+        // --- SHEET 1: PEMASUKAN ---
+        let pemasukanData = [
+            [`LAPORAN PEMASUKAN TAZAKKA - ${monthName} ${year}`],
+            [], // Baris kosong
+            ["RINGKASAN KEUANGAN"],
+            ["Total Pendapatan Kotor", formatToNumber(totalPendapatanKotor)],
+            ["Total Modal Barang Terjual", formatToNumber(totalModal)],
+            ["Laba Kotor (Pendapatan - Modal)", formatToNumber(labaKotor)],
+            ["Total Komisi Teknisi", formatToNumber(totalKomisi)],
+            ["Total Beban Operasional", formatToNumber(totalBebanOperasional)],
+            ["LABA BERSIH FINAL", formatToNumber(labaBersihFinal)],
+            [], // Baris kosong
+            ["DETAIL PEMASUKAN"],
+            ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Komisi (%)"]
+        ];
+        transactions.forEach(tx => {
+            pemasukanData.push([
+                new Date(tx.transaction_date).toLocaleDateString('id-ID'),
+                tx.customer_name,
+                tx.description,
+                tx.device_category,
+                formatToNumber(tx.revenue),
+                formatToNumber(tx.cost_of_goods),
+                tx.technician_name || '-',
+                tx.commission_percentage || 0
+            ]);
+        });
+
+        const wsPemasukan = XLSX.utils.aoa_to_sheet(pemasukanData);
+        // Atur lebar kolom untuk sheet pemasukan
+        wsPemasukan['!cols'] = [{wch:12}, {wch:20}, {wch:35}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:10}];
+
+
+        // --- SHEET 2: PENGELUARAN ---
+        let pengeluaranData = [
+            [`LAPORAN PENGELUARAN TAZAKKA - ${monthName} ${year}`],
+            [],
+            ["RINGKASAN PENGELUARAN"],
+            ["Total Beban Operasional", formatToNumber(totalBebanOperasional)],
+            ["Total Pembelanjaan Stok", formatToNumber(totalPembelianStok)],
+            ["TOTAL PENGELUARAN KESELURUHAN", formatToNumber(totalPengeluaranKeseluruhan)],
+            [],
+            ["DETAIL BEBAN OPERASIONAL"],
+            ["Tanggal", "Deskripsi", "Jumlah"]
+        ];
+        expenses.forEach(ex => {
+            pengeluaranData.push([
+                new Date(ex.expense_date).toLocaleDateString('id-ID'),
+                ex.description,
+                formatToNumber(ex.amount)
+            ]);
+        });
+        pengeluaranData.push([]); // Baris kosong pemisah
+        pengeluaranData.push(["DETAIL PEMBELANJAAN STOK"]);
+        pengeluaranData.push(["Tanggal", "Deskripsi", "Jumlah"]);
+        stockPurchases.forEach(sp => {
+            pengeluaranData.push([
+                new Date(sp.purchase_date).toLocaleDateString('id-ID'),
+                sp.description,
+                formatToNumber(sp.amount)
+            ]);
+        });
+
+        const wsPengeluaran = XLSX.utils.aoa_to_sheet(pengeluaranData);
+        // Atur lebar kolom untuk sheet pengeluaran
+        wsPengeluaran['!cols'] = [{wch:12}, {wch:35}, {wch:15}];
+
+        // Buat Workbook dan tambahkan kedua sheet
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Transaksi");
-        XLSX.writeFile(workbook, `Laporan_Transaksi_${year}-${String(month).padStart(2, '0')}.xlsx`);
+        XLSX.utils.book_append_sheet(workbook, wsPemasukan, "PEMASUKAN");
+        XLSX.utils.book_append_sheet(workbook, wsPengeluaran, "PENGELUARAN");
+
+        XLSX.writeFile(workbook, `Laporan_Bulanan_${year}-${String(month + 1).padStart(2, '0')}.xlsx`);
+
     } catch (err) {
         setError("Gagal mengunduh file laporan: " + err.message);
+    } finally {
+        setLoading(false);
     }
   };
+  // --- AKHIR DARI FUNGSI handleExportXLSX YANG BARU ---
 
   const handleOpenEditModal = (item, type) => { setEditingItem(item); setModalType(type); };
   const handleCloseEditModal = () => { setEditingItem(null); setModalType(null); };
@@ -195,7 +306,6 @@ function DashboardPage() {
     return `Laporan Harian (${dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })})`;
   };
 
-  // --- JSX dengan Logika Render Langsung ---
   return (
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '30px' }}>
@@ -203,16 +313,12 @@ function DashboardPage() {
         <div className="filter-controls">
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
           
-          {/* --- PERUBAHAN 1: Logika Tombol Dipisah --- */}
-          {/* Tombol Import: HANYA untuk pengelola dan admin */}
           {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
             <button onClick={() => setShowImportModal(true)} className="btn btn-warning">Import Data</button>
           )}
-          {/* Tombol Download: Untuk pengelola, admin, dan pemilik */}
           {currentUser && currentUser.role !== 'kasir' && (
             <button onClick={handleExportXLSX} className="btn btn-success">Download Laporan</button>
           )}
-          {/* --- AKHIR PERUBAHAN 1 --- */}
 
         </div>
       </div>
@@ -230,7 +336,6 @@ function DashboardPage() {
               <div className="report-card"><h3>Beban Operasional</h3><p>{formatToRupiah(summaryData.total_beban_operasional)}</p></div>
             </div>
             
-            {/* --- PERUBAHAN 2: Form Input Dibatasi untuk Pengelola dan Admin --- */}
             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
                   <div>
@@ -273,7 +378,6 @@ function DashboardPage() {
                   </div>
               </div>
             )}
-            {/* --- AKHIR PERUBAHAN 2 --- */}
 
             <h2>Detail Pemasukan Hari Ini</h2>
             <div className="table-container">
@@ -283,7 +387,6 @@ function DashboardPage() {
                     <th>Deskripsi</th>
                     <th>Pelanggan</th>
                     <th>Pendapatan</th>
-                    {/* --- PERUBAHAN 3: Kolom Aksi Tabel Pemasukan Dibatasi --- */}
                     {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                         <>
                             <th>Modal</th>
@@ -291,7 +394,6 @@ function DashboardPage() {
                             <th>Aksi</th>
                         </>
                     )}
-                    {/* --- AKHIR PERUBAHAN 3 --- */}
                   </tr>
                 </thead>
                 <tbody>
@@ -300,7 +402,6 @@ function DashboardPage() {
                         <td>{tx.description}</td>
                         <td>{tx.customer_name}</td>
                         <td>{formatToRupiah(tx.revenue)}</td>
-                        {/* --- PERUBAHAN 4: Isi Kolom Aksi Tabel Pemasukan Dibatasi --- */}
                         {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                             <>
                                 <td>{formatToRupiah(tx.cost_of_goods)}</td>
@@ -311,14 +412,12 @@ function DashboardPage() {
                                 </td>
                             </>
                         )}
-                        {/* --- AKHIR PERUBAHAN 4 --- */}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             
-            {/* --- KODE PERBAIKAN DIMULAI DI SINI --- */}
             {currentUser && (currentUser.role === 'pemilik' || currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <>
                 <h2 style={{ marginTop: '30px' }}>Detail Beban Operasional Hari Ini</h2>
@@ -328,7 +427,6 @@ function DashboardPage() {
                         <tr>
                             <th>Deskripsi</th>
                             <th>Jumlah</th>
-                            {/* Kolom Aksi hanya untuk pengelola & admin */}
                             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                 <th>Aksi</th>
                             )}
@@ -339,7 +437,6 @@ function DashboardPage() {
                             <tr key={ex.id}>
                                 <td>{ex.description}</td>
                                 <td>{formatToRupiah(ex.amount)}</td>
-                                {/* Tombol Aksi hanya untuk pengelola & admin */}
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                     <td>
                                         <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon"><FiEdit /></button>
@@ -359,7 +456,6 @@ function DashboardPage() {
                         <tr>
                             <th>Deskripsi</th>
                             <th>Jumlah</th>
-                            {/* Kolom Aksi hanya untuk pengelola & admin */}
                             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                 <th>Aksi</th>
                             )}
@@ -370,7 +466,6 @@ function DashboardPage() {
                             <tr key={sp.id}>
                                 <td>{sp.description}</td>
                                 <td>{formatToRupiah(sp.amount)}</td>
-                                {/* Tombol Aksi hanya untuk pengelola & admin */}
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                     <td>
                                         <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon"><FiEdit /></button>
@@ -384,7 +479,6 @@ function DashboardPage() {
                 </div>
               </>
             )}
-            {/* --- KODE PERBAIKAN SELESAI DI SINI --- */}
         </>
       )}
 
