@@ -177,11 +177,8 @@ function DashboardPage() {
     const dateObj = new Date(selectedDate + 'T00:00:00');
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth();
-    // Untuk judul di dalam file Excel (e.g., SEPTEMBER)
     const monthName = dateObj.toLocaleString('id-ID', { month: 'long' }).toUpperCase();
     
-    // --- PERUBAHAN NAMA FILE ---
-    // Untuk nama file (e.g., September)
     const monthNameForFile = dateObj.toLocaleString('id-ID', { month: 'long' });
     const capitalizedMonthName = monthNameForFile.charAt(0).toUpperCase() + monthNameForFile.slice(1);
     
@@ -204,9 +201,7 @@ function DashboardPage() {
         const stockPurchases = stockRes.data || [];
 
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
-        
-        // --- PERBAIKAN FORMAT RUPIAH DI SINI ---
-        const rupiahFormat = '"Rp" #,##0';
+        const rupiahFormat = '"Rp"#,##0;[Red]-"Rp"#,##0';
 
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
@@ -249,17 +244,19 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
+            // Terapkan style untuk header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
+            // Terapkan format Rupiah ke kolom yang berisi angka
             const currencyCols = [1, 4, 5]; // Kolom B, E, F
             for (const C of currencyCols) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 const cell = wsPemasukan[cellRef];
-                if (cell && cell.t === 'n') {
+                if (cell && cell.t === 'n') { // Cek jika sel ada dan tipenya adalah angka ('n')
                     cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
                 }
             }
@@ -293,19 +290,28 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
+            // Terapkan style untuk header
             if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow - 1 || R === detailStokHeaderRow) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
                 }
             }
-            const currencyCols = [1, 2]; // Kolom B, C
-            for (const C of currencyCols) {
-                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
-                const cell = wsPengeluaran[cellRef];
-                 if (cell && cell.t === 'n') {
-                    cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
-                }
+            
+            // --- INI BAGIAN YANG DIPERBAIKI ---
+            // Logika baru untuk memformat kolom Rupiah secara cerdas
+            // Format Kolom B (index 1) untuk bagian ringkasan
+            const summaryCellRef = XLSX.utils.encode_cell({c: 1, r: R});
+            const summaryCell = wsPengeluaran[summaryCellRef];
+            if (summaryCell && summaryCell.t === 'n') {
+                summaryCell.s = { ...(summaryCell.s || {}), numFmt: rupiahFormat };
+            }
+
+            // Format Kolom C (index 2) untuk bagian detail
+            const detailCellRef = XLSX.utils.encode_cell({c: 2, r: R});
+            const detailCell = wsPengeluaran[detailCellRef];
+            if (detailCell && detailCell.t === 'n') {
+                detailCell.s = { ...(detailCell.s || {}), numFmt: rupiahFormat };
             }
         }
 
@@ -313,7 +319,6 @@ function DashboardPage() {
         XLSX.utils.book_append_sheet(workbook, wsPemasukan, "PEMASUKAN");
         XLSX.utils.book_append_sheet(workbook, wsPengeluaran, "PENGELUARAN");
         
-        // --- PERUBAHAN NAMA FILE ---
         XLSX.writeFile(workbook, `Laporan_Bulanan-${capitalizedMonthName}-${year}.xlsx`);
 
     } catch (err) {
