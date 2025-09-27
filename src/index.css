@@ -1,4 +1,4 @@
-/* frontend/src/index.css (KODE LENGKAP FINAL - DENGAN PERBAIKAN TAMPILAN GRAFIK & KARTU MOBILE) */
+/* frontend/src/index.css (KODE LENGKAP FINAL - DENGAN PERBAIKAN TATA LETAK KARTU ADAPTIF) */
 
 /* --- Global Box Sizing --- */
 html {
@@ -217,17 +217,16 @@ table tbody tr:hover { background-color: #e9ecef; }
   flex-wrap: wrap;
   gap: 20px;
   margin-bottom: 20px;
-  /* PERBAIKAN: Tambah padding kiri agar simetris di desktop */
   padding-left: 15px;
 }
 
 .analytics-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
 .analytics-date-filters { display: flex; gap: 10px; }
 
-/* === PERBAIKAN BARU: Style untuk Container Grafik === */
+/* Style untuk Container Grafik */
 .chart-container {
   background-color: #ffffff;
-  padding: 20px 15px 15px 15px; /* Memberi ruang agar label grafik tidak terpotong */
+  padding: 20px 15px 15px 15px;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -251,32 +250,32 @@ table tbody tr:hover { background-color: #e9ecef; }
 @media (max-width: 768px) {
   
   /* --- A. STYLE UMUM UNTUK DASHBOARD & ANALYTICS --- */
-
-  /* === PERBAIKAN: Beri padding horizontal pada wrapper utama di mobile === */
   .analytics-header, .analytics-content-wrapper {
       padding-left: 15px;
       padding-right: 15px;
   }
   .analytics-header {
-      padding-top: 15px; /* Sedikit jarak di atas */
+      padding-top: 15px;
   }
 
-  /* Kartu ringkasan dibuat lebih rapi */
+  /* === PERBAIKAN UTAMA DI SINI === */
   .report-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    /* Gunakan auto-fit untuk membuat grid yang benar-benar responsif */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px; /* Jarak antar kartu sedikit dikurangi */
   }
+
   .report-card {
-    padding: 15px;
+    padding: 12px; /* Padding di dalam kartu sedikit dikurangi */
   }
   .report-card h3 {
-    font-size: 12px;
+    font-size: 11px; /* Font judul sedikit diperkecil */
     font-weight: 500;
     margin-bottom: 5px;
   }
-  /* === PERBAIKAN: Angka sedikit diperkecil agar tidak terlalu penuh === */
   .report-card p {
-    font-size: 15px;
+    font-size: 14px; /* Font angka diperkecil agar pas */
+    font-weight: 600; /* Dibuat sedikit tebal agar tetap terbaca */
   }
 
   /* --- B. STYLE KHUSUS HALAMAN DASHBOARD --- */
