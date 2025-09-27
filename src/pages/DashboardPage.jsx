@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Format Excel yang Andal)
+// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Metode Pemformatan Excel)
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -297,8 +297,6 @@ function DashboardPage() {
         const stockPurchases = stockRes.data || [];
 
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
-        
-        // --- PERBAIKAN FINAL: Format Rupiah yang Lebih Sederhana & Andal ---
         const rupiahFormat = '"Rp"#,##0';
         
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
@@ -344,32 +342,36 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
+            // === PERUBAHAN UTAMA DI SINI: MENGGUNAKAN METODE `.z` ===
+            const cellRef = XLSX.utils.encode_cell({c:0, r:R}); // Ambil sel pertama untuk referensi
+            if (!wsPemasukan[cellRef]) continue;
+
+            // Terapkan style header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
-                    const cellRef = XLSX.utils.encode_cell({c:C, r:R});
-                    if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
+                    const headerCellRef = XLSX.utils.encode_cell({c:C, r:R});
+                    if (wsPemasukan[headerCellRef]) wsPemasukan[headerCellRef].s = headerStyle;
                 }
             }
             
+            // Terapkan format Rupiah dengan metode .z
             const summaryStartRow = 3; 
             const summaryEndRow = 8;
             const detailStartRow = 12;
 
             if (R >= summaryStartRow && R <= summaryEndRow) {
-                const cellRef = XLSX.utils.encode_cell({ c: 1, r: R });
-                const cell = wsPemasukan[cellRef];
+                const cell = wsPemasukan[XLSX.utils.encode_cell({ c: 1, r: R })];
                 if (cell && cell.t === 'n') {
-                    cell.s = { numFmt: rupiahFormat };
+                    cell.z = rupiahFormat;
                 }
             }
 
             if (R >= detailStartRow) {
                 const detailCurrencyCols = [4, 5, 7]; // Kolom E, F, H
                 for (const C of detailCurrencyCols) {
-                    const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                    const cell = wsPemasukan[cellRef];
+                    const cell = wsPemasukan[XLSX.utils.encode_cell({ c: C, r: R })];
                     if (cell && cell.t === 'n') {
-                        cell.s = { numFmt: rupiahFormat };
+                         cell.z = rupiahFormat;
                     }
                 }
             }
@@ -401,28 +403,29 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
+            const cellRef = XLSX.utils.encode_cell({c:0, r:R});
+            if (!wsPengeluaran[cellRef]) continue;
+            
             if (R === 0 || R === 2 || R === 7 || R === 8 + expenses.length + 1 || R === 8 + expenses.length + 2) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
-                    const cellRef = XLSX.utils.encode_cell({c:C, r:R});
-                    if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
+                    const headerCellRef = XLSX.utils.encode_cell({c:C, r:R});
+                    if (wsPengeluaran[headerCellRef]) wsPengeluaran[headerCellRef].s = headerStyle;
                 }
             }
             
             if (R >= 3 && R <= 5) {
-                const cellRef = XLSX.utils.encode_cell({ c: 1, r: R });
-                const cell = wsPengeluaran[cellRef];
+                const cell = wsPengeluaran[XLSX.utils.encode_cell({ c: 1, r: R })];
                 if (cell && cell.t === 'n') {
-                    cell.s = { numFmt: rupiahFormat };
+                    cell.z = rupiahFormat;
                 }
             }
             
             const detailBebanStart = 9;
             const detailStokStart = detailBebanStart + expenses.length + 2;
             if ((R >= detailBebanStart && R < detailBebanStart + expenses.length) || (R >= detailStokStart && R < detailStokStart + stockPurchases.length)) {
-                 const cellRef = XLSX.utils.encode_cell({ c: 2, r: R });
-                 const cell = wsPengeluaran[cellRef];
+                 const cell = wsPengeluaran[XLSX.utils.encode_cell({ c: 2, r: R })];
                  if (cell && cell.t === 'n') {
-                     cell.s = { numFmt: rupiahFormat };
+                     cell.z = rupiahFormat;
                  }
             }
         }
