@@ -200,7 +200,8 @@ function DashboardPage() {
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
         
         // --- PERBAIKAN FORMAT RUPIAH DI SINI ---
-        const rupiahFormat = '"Rp "#.##0,-';
+        // Format ini akan menghasilkan "Rp 1.234.567"
+        const rupiahFormat = '"Rp" #,##0';
 
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
@@ -243,18 +244,25 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
+            // Terapkan style header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
-            const cellRefB = XLSX.utils.encode_cell({c:1, r:R});
-            const cellRefE = XLSX.utils.encode_cell({c:4, r:R});
-            const cellRefF = XLSX.utils.encode_cell({c:5, r:R});
-            if (wsPemasukan[cellRefB] && wsPemasukan[cellRefB].t === 'n') wsPemasukan[cellRefB].s = { numFmt: rupiahFormat };
-            if (wsPemasukan[cellRefE] && wsPemasukan[cellRefE].t === 'n') wsPemasukan[cellRefE].s = { numFmt: rupiahFormat };
-            if (wsPemasukan[cellRefF] && wsPemasukan[cellRefF].t === 'n') wsPemasukan[cellRefF].s = { numFmt: rupiahFormat };
+
+            // Terapkan format Rupiah ke kolom yang berisi nilai uang (B, E, F)
+            const currencyCols = [1, 4, 5]; // Kolom B, E, F
+            for (const C of currencyCols) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                const cell = wsPemasukan[cellRef];
+                // Pastikan sel ada dan tipenya adalah angka ('n')
+                if (cell && cell.t === 'n') {
+                    // Gabungkan style format angka dengan style yang sudah ada (jika ada)
+                    cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
+                }
+            }
         }
 
         const detailBebanHeaderRow = 8;
@@ -285,16 +293,24 @@ function DashboardPage() {
 
         const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
         for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
-            if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow -1 || R === detailStokHeaderRow) {
+            // Terapkan style header
+            if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow - 1 || R === detailStokHeaderRow) {
                  for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
                     const cellRef = XLSX.utils.encode_cell({c:C, r:R});
                     if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
                 }
             }
-            const cellRefB_Pengeluaran = XLSX.utils.encode_cell({c:1, r:R});
-            const cellRefC_Pengeluaran = XLSX.utils.encode_cell({c:2, r:R});
-            if (wsPengeluaran[cellRefB_Pengeluaran] && wsPengeluaran[cellRefB_Pengeluaran].t === 'n') wsPengeluaran[cellRefB_Pengeluaran].s = { numFmt: rupiahFormat };
-            if (wsPengeluaran[cellRefC_Pengeluaran] && wsPengeluaran[cellRefC_Pengeluaran].t === 'n') wsPengeluaran[cellRefC_Pengeluaran].s = { numFmt: rupiahFormat };
+
+            // Terapkan format Rupiah ke kolom yang berisi nilai uang (B, C)
+            const currencyCols = [1, 2]; // Kolom B, C
+            for (const C of currencyCols) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                // PERBAIKAN TYPO: gunakan wsPengeluaran, bukan wsPemasukan
+                const cell = wsPengeluaran[cellRef];
+                 if (cell && cell.t === 'n') {
+                    cell.s = { ...(cell.s || {}), numFmt: rupiahFormat };
+                }
+            }
         }
 
         const workbook = XLSX.utils.book_new();
