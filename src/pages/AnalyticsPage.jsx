@@ -220,7 +220,6 @@ function AnalyticsPage() {
       <div className="filter-controls">
         {view === 'weekly' && ( <div className="filter-item"> <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /> </div> )}
         {view === 'monthly' && (
-          // === PENYEMPURNAAN: Dibungkus dengan kelas baru untuk styling mobile ===
           <div className="analytics-date-filters">
             <div className="filter-item"> <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}> {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)} </select> </div>
             <div className="filter-item"> <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}> {years.map(y => <option key={y} value={y}>{y}</option>)} </select> </div>
@@ -236,7 +235,6 @@ function AnalyticsPage() {
     if (error) return <p className="error">{error}</p>;
     if (!summaryData || !chartData) return <p>Tidak ada data untuk ditampilkan pada rentang waktu ini.</p>;
     
-    // === PENYEMPURNAAN: Konfigurasi grafik dibuat dinamis berdasarkan ukuran layar ===
     const isMobile = window.innerWidth <= 768;
 
     const barChartOptions = {
@@ -245,14 +243,28 @@ function AnalyticsPage() {
         plugins: { 
             datalabels: { display: false },
             legend: {
-                position: isMobile ? 'bottom' : 'top', // Legenda di bawah pada mobile
+                position: isMobile ? 'bottom' : 'top',
             }
         },
         scales: {
             x: {
                 ticks: {
-                    maxRotation: isMobile ? 90 : 0, // Putar label di mobile
-                    minRotation: isMobile ? 90 : 0,
+                    // === PERBAIKAN UTAMA DI SINI ===
+                    autoSkip: true,       // Izinkan Chart.js untuk melewati beberapa label
+                    maxTicksLimit: isMobile ? 8 : 31, // Batasi jumlah maksimum label di mobile
+                    maxRotation: 90, 
+                    minRotation: 90,
+                }
+            },
+            y: {
+                ticks: {
+                    // Format angka menjadi lebih ringkas (misal: 10jt)
+                    callback: function(value) {
+                        if (value >= 1000000) {
+                            return (value / 1000000) + 'jt';
+                        }
+                        return formatToRupiah(value).replace('Rp', '').trim();
+                    }
                 }
             }
         }
@@ -264,7 +276,7 @@ function AnalyticsPage() {
         plugins: {
             legend: {
                 display: true,
-                position: isMobile ? 'bottom' : 'right', // Legenda di bawah pada mobile
+                position: isMobile ? 'bottom' : 'right', 
             },
             datalabels: {
                 formatter: (value, context) => {
@@ -283,7 +295,7 @@ function AnalyticsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '30px' }}>
                 <div className="chart-container">
                     <h3 className="chart-title">{view === 'annual' ? `Tren Bulanan ${selectedYear}` : `Tren Harian`}</h3>
-                    <div className="chart-wrapper" style={{height: isMobile ? '350px' : '300px', position: 'relative'}}>
+                    <div className="chart-wrapper" style={{height: '350px', position: 'relative'}}>
                       <Bar options={barChartOptions} data={chartData.trend} />
                     </div>
                 </div>
@@ -328,7 +340,6 @@ function AnalyticsPage() {
 
   return (
     <div className="container analytics-page-layout">
-      {/* === PENYEMPURNAAN: Membungkus header dengan kelas baru untuk styling mobile === */}
       <div className="analytics-header">
         <h1>{getTitle()}</h1>
         <div className="analytics-filters">

@@ -233,7 +233,7 @@ table tbody tr:hover { background-color: #e9ecef; }
 }
 .manage-users-layout {
   display: grid;
-  grid-template-columns: minmax(400px, 450px) 1fr; 
+  grid-template-columns: minmax(400px, 450px) 1fr;
   gap: 30px;
   align-items: start;
 }
@@ -288,30 +288,34 @@ table tbody tr:hover { background-color: #e9ecef; }
 }
 
 .forms-wrapper-mobile {
-  display: none; 
+  display: none;
 }
 
 
-/* === KODE BARU DAN YANG DISEMPURNAKAN UNTUK MOBILE === */
-/* --- Media Query untuk Tampilan Mobile (misal, layar di bawah 768px) --- */
+/* === SEMUA STYLE RESPONSIVE UNTUK MOBILE === */
 @media (max-width: 768px) {
 
-  /* --- A. STYLE UNTUK HALAMAN DASHBOARD --- */
+  /* --- A. STYLE UMUM UNTUK DASHBOARD & ANALYTICS --- */
 
-  /* Atur ulang grid Ringkasan */
+  /* Atur ulang grid Ringkasan (digunakan di kedua halaman) */
   .report-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    gap: 10px; /* Jarak antar kartu diperkecil */
   }
   .report-card {
-    padding: 15px;
+    padding: 12px; /* Padding di dalam kartu diperkecil */
   }
+  /* === PERBAIKAN UTAMA DI SINI === */
   .report-card h3 {
-    font-size: 13px;
+    font-size: 12px;   /* Font judul kartu diperkecil */
+    font-weight: 500;  /* Dibuat tidak terlalu tebal */
+    margin-bottom: 5px;
   }
   .report-card p {
-    font-size: 20px;
+    font-size: 16px;   /* Font angka diperkecil agar tidak terlalu dominan */
   }
+
+  /* --- B. STYLE KHUSUS HALAMAN DASHBOARD --- */
 
   /* Sembunyikan form versi desktop */
   .forms-wrapper-desktop {
@@ -356,7 +360,7 @@ table tbody tr:hover { background-color: #e9ecef; }
     border: 1px solid #e0e0e0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  
+
   /* Ubah Tabel menjadi Daftar Kartu */
   .table-container {
     border: none;
@@ -375,8 +379,8 @@ table tbody tr:hover { background-color: #e9ecef; }
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  table tbody tr:nth-child(even) { 
-    background-color: #ffffff; 
+  table tbody tr:nth-child(even) {
+    background-color: #ffffff;
   }
   .table-container td {
     display: block;
@@ -416,7 +420,7 @@ table tbody tr:hover { background-color: #e9ecef; }
     display: none;
   }
 
-  /* --- B. STYLE BARU UNTUK HALAMAN ANALYTICS --- */
+  /* --- C. STYLE KHUSUS HALAMAN ANALYTICS --- */
 
   .analytics-header {
       display: flex;
@@ -424,7 +428,7 @@ table tbody tr:hover { background-color: #e9ecef; }
       align-items: flex-start; /* Ratakan ke kiri */
       gap: 15px;
   }
-  
+
   .analytics-filters {
       display: flex;
       flex-direction: column; /* Tumpuk filter controls */
