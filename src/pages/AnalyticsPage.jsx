@@ -1,4 +1,4 @@
-// frontend/src/pages/AnalyticsPage.jsx (KODE FINAL DENGAN DEFAULT TANGGAL SAAT INI)
+// frontend/src/pages/AnalyticsPage.jsx (KODE FINAL DENGAN DEFAULT TANGGAL SAAT INI DAN UI MOBILE RESPONSIVE)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
@@ -27,23 +27,18 @@ const getLocalDate = () => {
 };
 
 function AnalyticsPage() {
-  const [view, setView] = useState('monthly'); // Default ke Bulanan
+  const [view, setView] = useState('monthly');
   const [summaryData, setSummaryData] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- PERUBAHAN UTAMA: Mengatur tanggal, bulan, dan tahun default ke SAAT INI ---
-  // Menggunakan helper function `getLocalDate` untuk tanggal hari ini (untuk tampilan mingguan)
   const [selectedDate, setSelectedDate] = useState(getLocalDate()); 
-  // Mengambil bulan saat ini (getMonth() dimulai dari 0, jadi +1)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); 
-  // Mengambil tahun saat ini
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); 
-  // --- AKHIR PERUBAHAN ---
 
   const months = Array.from({length: 12}, (_, i) => ({ value: i + 1, label: new Date(0, i).toLocaleString('id-ID', { month: 'long' }) }));
-  const years = Array.from({length: 5}, (_, i) => new Date().getFullYear() - i); // Dibuat dinamis juga agar selalu update
+  const years = Array.from({length: 5}, (_, i) => new Date().getFullYear() - i);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -225,10 +220,11 @@ function AnalyticsPage() {
       <div className="filter-controls">
         {view === 'weekly' && ( <div className="filter-item"> <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /> </div> )}
         {view === 'monthly' && (
-          <>
+          // === PENYEMPURNAAN: Dibungkus dengan kelas baru untuk styling mobile ===
+          <div className="analytics-date-filters">
             <div className="filter-item"> <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}> {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)} </select> </div>
             <div className="filter-item"> <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}> {years.map(y => <option key={y} value={y}>{y}</option>)} </select> </div>
-          </>
+          </div>
         )}
         {view === 'annual' && ( <div className="filter-item"> <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}> {years.map(y => <option key={y} value={y}>{y}</option>)} </select> </div> )}
       </div>
@@ -240,40 +236,61 @@ function AnalyticsPage() {
     if (error) return <p className="error">{error}</p>;
     if (!summaryData || !chartData) return <p>Tidak ada data untuk ditampilkan pada rentang waktu ini.</p>;
     
+    // === PENYEMPURNAAN: Konfigurasi grafik dibuat dinamis berdasarkan ukuran layar ===
+    const isMobile = window.innerWidth <= 768;
+
+    const barChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+            datalabels: { display: false },
+            legend: {
+                position: isMobile ? 'bottom' : 'top', // Legenda di bawah pada mobile
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    maxRotation: isMobile ? 90 : 0, // Putar label di mobile
+                    minRotation: isMobile ? 90 : 0,
+                }
+            }
+        }
+    };
+
+    const doughnutChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: isMobile ? 'bottom' : 'right', // Legenda di bawah pada mobile
+            },
+            datalabels: {
+                formatter: (value, context) => {
+                    let sum = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    if (sum === 0) return '0.00%';
+                    let percentage = (value * 100 / sum).toFixed(2) + "%";
+                    return percentage;
+                },
+                color: '#fff',
+            }
+        },
+    };
+
     return (
         <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '30px', marginBottom: '30px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '30px' }}>
                 <div className="chart-container">
                     <h3 className="chart-title">{view === 'annual' ? `Tren Bulanan ${selectedYear}` : `Tren Harian`}</h3>
-                    <div className="chart-wrapper" style={{height: '300px', position: 'relative'}}>
-                      <Bar 
-                        options={{ responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }} 
-                        data={chartData.trend} 
-                      />
+                    <div className="chart-wrapper" style={{height: isMobile ? '350px' : '300px', position: 'relative'}}>
+                      <Bar options={barChartOptions} data={chartData.trend} />
                     </div>
                 </div>
                 <div className="chart-container">
                     <h3 className="chart-title">Pendapatan per Kategori</h3>
                     <div className="chart-wrapper" style={{height: '300px', position: 'relative'}}>
-                      <Doughnut 
-                        options={{ 
-                          responsive: true, 
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: { display: true, position: 'right' },
-                            datalabels: {
-                               formatter: (value, context) => {
-                                   let sum = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                   if (sum === 0) return '0.00%';
-                                   let percentage = (value * 100 / sum).toFixed(2) + "%";
-                                   return percentage;
-                               },
-                               color: '#fff',
-                            }
-                          },
-                        }} 
-                        data={chartData.category} 
-                      />
+                      <Doughnut options={doughnutChartOptions} data={chartData.category} />
                     </div>
                 </div>
             </div>
@@ -311,17 +328,17 @@ function AnalyticsPage() {
 
   return (
     <div className="container analytics-page-layout">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '20px' }}>
+      {/* === PENYEMPURNAAN: Membungkus header dengan kelas baru untuk styling mobile === */}
+      <div className="analytics-header">
         <h1>{getTitle()}</h1>
-        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+        <div className="analytics-filters">
             {renderFilters()}
+            <div className="view-toggle-buttons">
+                <button onClick={() => setView('weekly')} className={view === 'weekly' ? 'active' : ''}>Mingguan</button>
+                <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>Bulanan</button>
+                <button onClick={() => setView('annual')} className={view === 'annual' ? 'active' : ''}>Tahunan</button>
+            </div>
         </div>
-      </div>
-
-      <div className="view-toggle-buttons">
-        <button onClick={() => setView('weekly')} className={view === 'weekly' ? 'active' : ''}>Mingguan</button>
-        <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>Bulanan</button>
-        <button onClick={() => setView('annual')} className={view === 'annual' ? 'active' : ''}>Tahunan</button>
       </div>
       
       <div className="analytics-content-wrapper">

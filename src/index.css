@@ -296,7 +296,9 @@ table tbody tr:hover { background-color: #e9ecef; }
 /* --- Media Query untuk Tampilan Mobile (misal, layar di bawah 768px) --- */
 @media (max-width: 768px) {
 
-  /* 1. Atur ulang grid Ringkasan menjadi 2 kolom dan lebih ringkas */
+  /* --- A. STYLE UNTUK HALAMAN DASHBOARD --- */
+
+  /* Atur ulang grid Ringkasan */
   .report-grid {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
@@ -305,32 +307,30 @@ table tbody tr:hover { background-color: #e9ecef; }
     padding: 15px;
   }
   .report-card h3 {
-    font-size: 13px; /* Perkecil font judul kartu */
+    font-size: 13px;
   }
   .report-card p {
-    font-size: 20px; /* Perkecil font angka */
+    font-size: 20px;
   }
 
-  /* 2. Sembunyikan form versi desktop */
+  /* Sembunyikan form versi desktop */
   .forms-wrapper-desktop {
     display: none;
   }
 
-  /* 3. Tampilkan wrapper form mobile dan beri style pada tabs yang lebih modern */
+  /* Tampilkan wrapper & style tabs form mobile */
   .forms-wrapper-mobile {
     display: block;
     margin-top: 30px;
   }
-
   .form-tabs {
     display: flex;
-    background-color: #e9ecef; /* Beri latar belakang */
+    background-color: #e9ecef;
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 20px;
-    border-bottom: none; /* Hapus border bawah yang lama */
+    border-bottom: none;
   }
-
   .form-tabs button {
     flex-grow: 1;
     padding: 10px 5px;
@@ -338,20 +338,17 @@ table tbody tr:hover { background-color: #e9ecef; }
     font-weight: 600;
     cursor: pointer;
     border: none;
-    border-radius: 8px; /* Buat tombol di dalam tab lebih rounded */
+    border-radius: 8px;
     background-color: transparent;
     color: #495057;
     transition: all 0.3s ease;
-    border-bottom: none; /* Hapus border bawah yang lama */
+    border-bottom: none;
   }
-  
   .form-tabs button.active {
     background-color: #ffffff;
     color: #3498db;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
-
-  /* 4. Beri style pada konten form di bawah tabs */
   .form-content-mobile {
     background-color: #ffffff;
     padding: 20px;
@@ -360,19 +357,15 @@ table tbody tr:hover { background-color: #e9ecef; }
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
   
-  /* 5. Perubahan Fundamental: Mengubah Tabel menjadi Daftar Kartu */
+  /* Ubah Tabel menjadi Daftar Kartu */
   .table-container {
     border: none;
     box-shadow: none;
-    background-color: transparent; /* Latar belakang container jadi transparan */
+    background-color: transparent;
   }
-  
-  /* Sembunyikan header tabel di mobile */
   .table-container thead {
     display: none;
   }
-
-  /* Ubah <tr> menjadi kartu */
   .table-container tr {
     display: block;
     background-color: #ffffff;
@@ -382,32 +375,27 @@ table tbody tr:hover { background-color: #e9ecef; }
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  /* Hapus background zebra striping */
   table tbody tr:nth-child(even) { 
     background-color: #ffffff; 
   }
-
-  /* Ubah <td> menjadi baris di dalam kartu */
   .table-container td {
     display: block;
-    text-align: right; /* Ratakan konten (angka) ke kanan */
-    padding-left: 50%; /* Beri ruang untuk label di kiri */
+    text-align: right;
+    padding-left: 50%;
     position: relative;
-    border: none; /* Hapus border sel */
+    border: none;
     padding-bottom: 10px;
     padding-top: 10px;
-    border-bottom: 1px solid #f0f0f0; /* Beri garis pemisah antar data */
+    border-bottom: 1px solid #f0f0f0;
   }
   .table-container tr:last-child {
-      margin-bottom: 0; /* Hapus margin bawah di kartu terakhir */
+      margin-bottom: 0;
   }
   .table-container td:last-child {
-      border-bottom: none; /* Hapus garis di item terakhir dalam kartu */
+      border-bottom: none;
   }
-
-  /* Buat label di kiri menggunakan pseudo-element ::before */
   .table-container td::before {
-    content: attr(data-label); /* Ambil teks label dari atribut data-label */
+    content: attr(data-label);
     position: absolute;
     left: 0;
     width: 45%;
@@ -417,17 +405,48 @@ table tbody tr:hover { background-color: #e9ecef; }
     font-weight: bold;
     color: #2c3e50;
   }
-
-  /* Atur ulang bagian tombol aksi di dalam kartu */
   .table-container td[data-label="Aksi"] {
     display: flex;
-    justify-content: flex-end; /* Pindahkan tombol ke kanan */
+    justify-content: flex-end;
     align-items: center;
     padding-top: 15px;
-    padding-left: 0; /* Hapus padding kiri khusus untuk sel aksi */
+    padding-left: 0;
   }
   .table-container td[data-label="Aksi"]::before {
-    display: none; /* Sembunyikan label "Aksi" */
+    display: none;
+  }
+
+  /* --- B. STYLE BARU UNTUK HALAMAN ANALYTICS --- */
+
+  .analytics-header {
+      display: flex;
+      flex-direction: column; /* Tumpuk judul dan filter */
+      align-items: flex-start; /* Ratakan ke kiri */
+      gap: 15px;
+  }
+  
+  .analytics-filters {
+      display: flex;
+      flex-direction: column; /* Tumpuk filter controls */
+      width: 100%;
+      gap: 15px;
+  }
+
+  .analytics-date-filters {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+  }
+
+  .analytics-date-filters .filter-item {
+      flex-grow: 1; /* Buat dropdown bulan & tahun sama lebar */
+  }
+
+  /* Override style desktop agar tombol toggle full-width di mobile */
+  .view-toggle-buttons {
+      width: 100%; /* Buat tombol toggle selebar layar */
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr; /* Pastikan 3 tombol sama lebar */
   }
 
 }
