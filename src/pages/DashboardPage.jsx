@@ -16,7 +16,7 @@ const formatToRupiah = (number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numericValue);
 };
 
-// Helper baru untuk format Rupiah tanpa 'Rp' untuk Excel
+// Helper untuk mengubah angka ke format numerik murni untuk Excel
 const formatToNumber = (number) => {
     if (number === null || number === undefined) return 0;
     const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
@@ -39,7 +39,7 @@ const getLocalDate = () => {
 function DashboardPage() {
   const currentUser = useUser();
   const [summaryData, setSummaryData] = useState(null);
-  const [dailyDetails, setDailyDetails] = useState(null); // Diubah ke null untuk penanganan kondisi yang lebih baik
+  const [dailyDetails, setDailyDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -70,7 +70,6 @@ function DashboardPage() {
     setTxPartCategory('');
   };
 
-  // --- Logika Fetch Data disederhanakan di dalam useEffect ---
   useEffect(() => {
     const fetchData = async () => {
       if (!selectedDate) return;
@@ -119,7 +118,6 @@ function DashboardPage() {
     fetchData();
   }, [selectedDate, currentUser]);
 
-  // --- Fungsi-fungsi Handler (Penambahan, Penghapusan, Ekspor, dll.) ---
   const handleAddTransaction = async (e) => {
     e.preventDefault();
     if (!currentUser) return setError('User tidak ditemukan, silakan login ulang.');
@@ -172,15 +170,15 @@ function DashboardPage() {
     }
   };
 
-  // --- INI ADALAH FUNGSI handleExportXLSX YANG BARU ---
+  // --- INI ADALAH FUNGSI handleExportXLSX DENGAN STYLING ---
   const handleExportXLSX = async () => {
     setLoading(true);
     setError('');
 
     const dateObj = new Date(selectedDate + 'T00:00:00');
     const year = dateObj.getFullYear();
-    const month = dateObj.getMonth(); // 0-11
-    const monthName = dateObj.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase();
+    const month = dateObj.getMonth();
+    const monthName = dateObj.toLocaleString('id-ID', { month: 'long' }).toUpperCase();
     
     const firstDay = new Date(year, month, 1).toISOString();
     const lastDay = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
@@ -200,14 +198,15 @@ function DashboardPage() {
         const expenses = expRes.data || [];
         const stockPurchases = stockRes.data || [];
 
-        // Kalkulasi Summary
+        // --- BAGIAN BARU: DEFINISI STYLE ---
+        const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
+        const rupiahFormat = '"Rp"#,##0';
+        // --- AKHIR BAGIAN BARU ---
+
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
         const labaKotor = totalPendapatanKotor - totalModal;
-        const totalKomisi = transactions.reduce((sum, tx) => {
-            const commission = (tx.revenue * (tx.commission_percentage || 0)) / 100;
-            return sum + commission;
-        }, 0);
+        const totalKomisi = transactions.reduce((sum, tx) => sum + ((tx.revenue * (tx.commission_percentage || 0)) / 100), 0);
         const totalBebanOperasional = expenses.reduce((sum, ex) => sum + ex.amount, 0);
         const totalPembelianStok = stockPurchases.reduce((sum, sp) => sum + sp.amount, 0);
         const totalPengeluaranKeseluruhan = totalBebanOperasional + totalPembelianStok;
@@ -216,7 +215,7 @@ function DashboardPage() {
         // --- SHEET 1: PEMASUKAN ---
         let pemasukanData = [
             [`LAPORAN PEMASUKAN TAZAKKA - ${monthName} ${year}`],
-            [], // Baris kosong
+            [],
             ["RINGKASAN KEUANGAN"],
             ["Total Pendapatan Kotor", formatToNumber(totalPendapatanKotor)],
             ["Total Modal Barang Terjual", formatToNumber(totalModal)],
@@ -224,7 +223,7 @@ function DashboardPage() {
             ["Total Komisi Teknisi", formatToNumber(totalKomisi)],
             ["Total Beban Operasional", formatToNumber(totalBebanOperasional)],
             ["LABA BERSIH FINAL", formatToNumber(labaBersihFinal)],
-            [], // Baris kosong
+            [],
             ["DETAIL PEMASUKAN"],
             ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Komisi (%)"]
         ];
@@ -242,11 +241,32 @@ function DashboardPage() {
         });
 
         const wsPemasukan = XLSX.utils.aoa_to_sheet(pemasukanData);
-        // Atur lebar kolom untuk sheet pemasukan
         wsPemasukan['!cols'] = [{wch:12}, {wch:20}, {wch:35}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:10}];
+
+        // --- BAGIAN BARU: Menerapkan Style & Format ke Sheet Pemasukan ---
+        const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
+        for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
+            // Style untuk Header
+            if (R === 0 || R === 2 || R === 10 || R === 11) {
+                for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({c:C, r:R});
+                    if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
+                }
+            }
+            // Format Rupiah
+            const cellRefB = XLSX.utils.encode_cell({c:1, r:R}); // Kolom B (Ringkasan)
+            const cellRefE = XLSX.utils.encode_cell({c:4, r:R}); // Kolom E (Pendapatan)
+            const cellRefF = XLSX.utils.encode_cell({c:5, r:R}); // Kolom F (Modal)
+            if (wsPemasukan[cellRefB] && wsPemasukan[cellRefB].t === 'n') wsPemasukan[cellRefB].s = { numFmt: rupiahFormat };
+            if (wsPemasukan[cellRefE] && wsPemasukan[cellRefE].t === 'n') wsPemasukan[cellRefE].s = { numFmt: rupiahFormat };
+            if (wsPemasukan[cellRefF] && wsPemasukan[cellRefF].t === 'n') wsPemasukan[cellRefF].s = { numFmt: rupiahFormat };
+        }
+        // --- AKHIR BAGIAN BARU ---
 
 
         // --- SHEET 2: PENGELUARAN ---
+        const detailBebanHeaderRow = 8;
+        const detailStokHeaderRow = detailBebanHeaderRow + expenses.length + 2;
         let pengeluaranData = [
             [`LAPORAN PENGELUARAN TAZAKKA - ${monthName} ${year}`],
             [],
@@ -259,28 +279,36 @@ function DashboardPage() {
             ["Tanggal", "Deskripsi", "Jumlah"]
         ];
         expenses.forEach(ex => {
-            pengeluaranData.push([
-                new Date(ex.expense_date).toLocaleDateString('id-ID'),
-                ex.description,
-                formatToNumber(ex.amount)
-            ]);
+            pengeluaranData.push([ new Date(ex.expense_date).toLocaleDateString('id-ID'), ex.description, formatToNumber(ex.amount) ]);
         });
-        pengeluaranData.push([]); // Baris kosong pemisah
+        pengeluaranData.push([]);
         pengeluaranData.push(["DETAIL PEMBELANJAAN STOK"]);
         pengeluaranData.push(["Tanggal", "Deskripsi", "Jumlah"]);
         stockPurchases.forEach(sp => {
-            pengeluaranData.push([
-                new Date(sp.purchase_date).toLocaleDateString('id-ID'),
-                sp.description,
-                formatToNumber(sp.amount)
-            ]);
+            pengeluaranData.push([ new Date(sp.purchase_date).toLocaleDateString('id-ID'), sp.description, formatToNumber(sp.amount) ]);
         });
 
         const wsPengeluaran = XLSX.utils.aoa_to_sheet(pengeluaranData);
-        // Atur lebar kolom untuk sheet pengeluaran
         wsPengeluaran['!cols'] = [{wch:12}, {wch:35}, {wch:15}];
 
-        // Buat Workbook dan tambahkan kedua sheet
+        // --- BAGIAN BARU: Menerapkan Style & Format ke Sheet Pengeluaran ---
+        const rangePengeluaran = XLSX.utils.decode_range(wsPengeluaran['!ref']);
+        for (let R = rangePengeluaran.s.r; R <= rangePengeluaran.e.r; ++R) {
+            // Style untuk Header
+            if (R === 0 || R === 2 || R === 7 || R === detailBebanHeaderRow || R === detailStokHeaderRow -1 || R === detailStokHeaderRow) {
+                 for (let C = rangePengeluaran.s.c; C <= rangePengeluaran.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({c:C, r:R});
+                    if (wsPengeluaran[cellRef]) wsPengeluaran[cellRef].s = headerStyle;
+                }
+            }
+            // Format Rupiah
+            const cellRefB_Pengeluaran = XLSX.utils.encode_cell({c:1, r:R}); // Kolom B (Ringkasan)
+            const cellRefC_Pengeluaran = XLSX.utils.encode_cell({c:2, r:R}); // Kolom C (Jumlah)
+            if (wsPengeluaran[cellRefB_Pengeluaran] && wsPengeluaran[cellRefB_Pengeluaran].t === 'n') wsPengeluaran[cellRefB_Pengeluaran].s = { numFmt: rupiahFormat };
+            if (wsPengeluaran[cellRefC_Pengeluaran] && wsPengeluaran[cellRefC_Pengeluaran].t === 'n') wsPengeluaran[cellRefC_Pengeluaran].s = { numFmt: rupiahFormat };
+        }
+        // --- AKHIR BAGIAN BARU ---
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, wsPemasukan, "PEMASUKAN");
         XLSX.utils.book_append_sheet(workbook, wsPengeluaran, "PENGELUARAN");
@@ -293,7 +321,7 @@ function DashboardPage() {
         setLoading(false);
     }
   };
-  // --- AKHIR DARI FUNGSI handleExportXLSX YANG BARU ---
+  // --- AKHIR DARI FUNGSI handleExportXLSX ---
 
   const handleOpenEditModal = (item, type) => { setEditingItem(item); setModalType(type); };
   const handleCloseEditModal = () => { setEditingItem(null); setModalType(null); };
