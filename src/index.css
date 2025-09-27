@@ -293,3 +293,73 @@ table tbody tr:hover { background-color: #e9ecef; }
     grid-template-columns: 1fr;
   }
 }
+
+/* === STYLE SPESIFIK UNTUK DASHBOARD & TAMPILAN MOBILE === */
+/* (Tambahkan kode ini di akhir file index.css Anda) */
+
+/* Wrapper untuk 3 form di versi desktop */
+.forms-wrapper-desktop {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Wrapper untuk form versi mobile, default-nya disembunyikan */
+.forms-wrapper-mobile {
+  display: none; 
+}
+
+
+/* --- Media Query untuk Tampilan Mobile (misal, layar di bawah 768px) --- */
+@media (max-width: 768px) {
+
+  /* 1. Atur ulang grid Ringkasan menjadi 2 kolom */
+  .report-grid {
+    grid-template-columns: 1fr 1fr; /* Paksa menjadi 2 kolom */
+    gap: 15px;
+  }
+
+  /* 2. Sembunyikan form versi desktop */
+  .forms-wrapper-desktop {
+    display: none;
+  }
+
+  /* 3. Tampilkan wrapper form mobile dan beri style pada tabs */
+  .forms-wrapper-mobile {
+    display: block; /* Tampilkan di mobile */
+    margin-top: 30px;
+  }
+
+  .form-tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+  }
+
+  .form-tabs button {
+    flex-grow: 1; /* Agar lebar tombol sama rata */
+    padding: 12px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: #7f8c8d;
+    border-bottom: 3px solid transparent; /* Garis bawah non-aktif */
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .form-tabs button.active {
+    color: #3498db; /* Warna biru primer Anda */
+    border-bottom-color: #3498db; /* Garis bawah untuk tab aktif */
+  }
+
+  /* 4. Beri style pada konten form di bawah tabs */
+  .form-content-mobile {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+}

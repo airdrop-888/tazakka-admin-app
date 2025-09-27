@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Metode Pemformatan Excel)
+// frontend/src/pages/DashboardPage.jsx (Versi Final dengan Perbaikan Metode Pemformatan Excel dan UI Mobile Responsif)
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -65,6 +65,9 @@ function DashboardPage() {
   const [exAmount, setExAmount] = useState('');
   const [spDesc, setSpDesc] = useState('');
   const [spAmount, setSpAmount] = useState('');
+
+  // State baru untuk tab mobile
+  const [activeTab, setActiveTab] = useState('pemasukan');
 
   const deviceCategories = ["Hape", "Laptop", "Printer", "Lainnya"];
   const partsCategoriesMap = { Hape: ["LCD", "Battery", "Papan Charger", "Lainnya"], Laptop: ["LCD", "Battery", "Keyboard", "Lainnya"], Printer: ["Cartridge", "Head", "Lainnya"], Lainnya: ["Jasa", "Penjualan", "Lainnya"] };
@@ -342,11 +345,8 @@ function DashboardPage() {
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
-            // === PERUBAHAN UTAMA DI SINI: MENGGUNAKAN METODE `.z` ===
-            const cellRef = XLSX.utils.encode_cell({c:0, r:R}); // Ambil sel pertama untuk referensi
+            const cellRef = XLSX.utils.encode_cell({c:0, r:R});
             if (!wsPemasukan[cellRef]) continue;
-
-            // Terapkan style header
             if (R === 0 || R === 2 || R === 10 || R === 11) {
                 for (let C = rangePemasukan.s.c; C <= rangePemasukan.e.c; ++C) {
                     const headerCellRef = XLSX.utils.encode_cell({c:C, r:R});
@@ -354,25 +354,20 @@ function DashboardPage() {
                 }
             }
             
-            // Terapkan format Rupiah dengan metode .z
             const summaryStartRow = 3; 
             const summaryEndRow = 8;
             const detailStartRow = 12;
 
             if (R >= summaryStartRow && R <= summaryEndRow) {
                 const cell = wsPemasukan[XLSX.utils.encode_cell({ c: 1, r: R })];
-                if (cell && cell.t === 'n') {
-                    cell.z = rupiahFormat;
-                }
+                if (cell && cell.t === 'n') cell.z = rupiahFormat;
             }
 
             if (R >= detailStartRow) {
-                const detailCurrencyCols = [4, 5, 7]; // Kolom E, F, H
+                const detailCurrencyCols = [4, 5, 7];
                 for (const C of detailCurrencyCols) {
                     const cell = wsPemasukan[XLSX.utils.encode_cell({ c: C, r: R })];
-                    if (cell && cell.t === 'n') {
-                         cell.z = rupiahFormat;
-                    }
+                    if (cell && cell.t === 'n') cell.z = rupiahFormat;
                 }
             }
         }
@@ -415,18 +410,14 @@ function DashboardPage() {
             
             if (R >= 3 && R <= 5) {
                 const cell = wsPengeluaran[XLSX.utils.encode_cell({ c: 1, r: R })];
-                if (cell && cell.t === 'n') {
-                    cell.z = rupiahFormat;
-                }
+                if (cell && cell.t === 'n') cell.z = rupiahFormat;
             }
             
             const detailBebanStart = 9;
             const detailStokStart = detailBebanStart + expenses.length + 2;
             if ((R >= detailBebanStart && R < detailBebanStart + expenses.length) || (R >= detailStokStart && R < detailStokStart + stockPurchases.length)) {
                  const cell = wsPengeluaran[XLSX.utils.encode_cell({ c: 2, r: R })];
-                 if (cell && cell.t === 'n') {
-                     cell.z = rupiahFormat;
-                 }
+                 if (cell && cell.t === 'n') cell.z = rupiahFormat;
             }
         }
 
@@ -486,7 +477,9 @@ function DashboardPage() {
             </div>
             
             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
-              <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
+              <>
+                {/* === KODE BARU: Wrapper untuk Form Desktop === */}
+                <div className="forms-wrapper-desktop" style={{ marginTop: '30px' }}>
                   <div>
                     <h2>Tambah Pemasukan</h2>
                     <form onSubmit={handleAddTransaction} className="form-section">
@@ -525,10 +518,66 @@ function DashboardPage() {
                         <button type="submit" className="btn">Tambah Belanja</button>
                     </form>
                   </div>
-              </div>
+                </div>
+
+                {/* === KODE BARU: Wrapper untuk Form Mobile dengan Tabs === */}
+                <div className="forms-wrapper-mobile">
+                    <div className="form-tabs">
+                        <button onClick={() => setActiveTab('pemasukan')} className={activeTab === 'pemasukan' ? 'active' : ''}>Pemasukan</button>
+                        <button onClick={() => setActiveTab('beban')} className={activeTab === 'beban' ? 'active' : ''}>Beban</button>
+                        <button onClick={() => setActiveTab('stok')} className={activeTab === 'stok' ? 'active' : ''}>Stok</button>
+                    </div>
+                    <div className="form-content-mobile">
+                        {activeTab === 'pemasukan' && (
+                           <div>
+                                <h2>Tambah Pemasukan</h2>
+                                <form onSubmit={handleAddTransaction} className="form-section">
+                                    <input type="text" placeholder="Nama Pelanggan" value={txCustomerName} onChange={e => setTxCustomerName(e.target.value)} required />
+                                    <input type="text" placeholder="Deskripsi (misal: Ganti LCD iPhone)" value={txDesc} onChange={e => setTxDesc(e.target.value)} required />
+                                    <select value={txDeviceCategory} onChange={handleDeviceCategoryChange} required>
+                                        <option value="">-- Pilih Kategori Device --</option>
+                                        {deviceCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                    </select>
+                                    {txDeviceCategory && (
+                                        <select value={txPartCategory} onChange={e => setTxPartCategory(e.target.value)} required>
+                                            <option value="">-- Pilih Kategori Part/Jasa --</option>
+                                            {partsCategoriesMap[txDeviceCategory].map(part => <option key={part} value={part}>{part}</option>)}
+                                        </select>
+                                    )}
+                                    <input type="text" placeholder="Pendapatan (Rp)" value={formatToRupiah(txRevenue)} onChange={e => handleNumericInputChange(e.target.value, setTxRevenue)} required />
+                                    <input type="text" placeholder="Harga Modal Barang (Rp)" value={formatToRupiah(txCost)} onChange={e => handleNumericInputChange(e.target.value, setTxCost)} />
+                                    <input type="text" placeholder="Nama Teknisi" value={txTechnician} onChange={e => setTxTechnician(e.target.value)} />
+                                    <input type="number" placeholder="Komisi Teknisi (%)" value={txCommission} onChange={e => setTxCommission(e.target.value)} min="0" max="100" />
+                                    <button type="submit" className="btn">Tambah Pemasukan</button>
+                                </form>
+                            </div>
+                        )}
+                        {activeTab === 'beban' && (
+                            <div>
+                                <h2>Tambah Beban Operasional</h2>
+                                <form onSubmit={handleAddExpense} className="form-section">
+                                    <input type="text" placeholder="Deskripsi (misal: Bayar Listrik)" value={exDesc} onChange={e => setExDesc(e.target.value)} required />
+                                    <input type="text" placeholder="Jumlah (Rp)" value={formatToRupiah(exAmount)} onChange={e => handleNumericInputChange(e.target.value, setExAmount)} required />
+                                    <button type="submit" className="btn">Tambah Beban</button>
+                                </form>
+                            </div>
+                        )}
+                        {activeTab === 'stok' && (
+                            <div>
+                                <h2>Tambah Pembelanjaan Stok</h2>
+                                <form onSubmit={handleAddStockPurchase} className="form-section">
+                                    <input type="text" placeholder="Deskripsi (misal: Beli LCD Samsung)" value={spDesc} onChange={e => setSpDesc(e.target.value)} required />
+                                    <input type="text" placeholder="Jumlah (Rp)" value={formatToRupiah(spAmount)} onChange={e => handleNumericInputChange(e.target.value, setSpAmount)} required />
+                                    <button type="submit" className="btn">Tambah Belanja</button>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </div>
+              </>
             )}
 
-            <h2>Detail Pemasukan Hari Ini</h2>
+            <h2 style={{ marginTop: '40px' }}>Detail Pemasukan Hari Ini</h2>
             <div className="table-container">
               <table>
                 <thead>
