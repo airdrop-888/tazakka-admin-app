@@ -16,7 +16,6 @@ const formatToRupiah = (number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numericValue);
 };
 
-// Helper untuk format WhatsApp (tanpa 'Rp' dan spasi)
 const formatToSimpleNumber = (number) => {
     if (number === null || number === undefined) return '0';
     const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
@@ -24,15 +23,12 @@ const formatToSimpleNumber = (number) => {
     return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(numericValue);
 };
 
-
-// Helper untuk mengubah angka ke format numerik murni untuk Excel
 const formatToNumber = (number) => {
     if (number === null || number === undefined) return 0;
     const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
     if (isNaN(numericValue)) return 0;
     return numericValue;
 };
-
 
 const parseRupiah = (rupiahString) => String(rupiahString).replace(/[^0-9]/g, '');
 
@@ -70,7 +66,6 @@ function DashboardPage() {
   const [spDesc, setSpDesc] = useState('');
   const [spAmount, setSpAmount] = useState('');
 
-  // Kategori
   const deviceCategories = ["Hape", "Laptop", "Printer", "Lainnya"];
   const partsCategoriesMap = { Hape: ["LCD", "Battery", "Papan Charger", "Lainnya"], Laptop: ["LCD", "Battery", "Keyboard", "Lainnya"], Printer: ["Cartridge", "Head", "Lainnya"], Lainnya: ["Jasa", "Penjualan", "Lainnya"] };
 
@@ -108,7 +103,6 @@ function DashboardPage() {
         
         setDailyDetails({ transactions, expenses, stockPurchases });
         
-        // --- LOGIKA PERHITUNGAN BARU ---
         const total_pendapatan = transactions.reduce((sum, tx) => sum + (tx.revenue || 0), 0);
         const total_modal = transactions.reduce((sum, tx) => sum + (tx.cost_of_goods || 0), 0);
         
@@ -121,10 +115,7 @@ function DashboardPage() {
         const total_beban_operasional = expenses.reduce((sum, ex) => sum + (ex.amount || 0), 0);
         const total_pembelanjaan_stok = stockPurchases.reduce((sum, sp) => sum + (sp.amount || 0), 0);
         
-        // Total pengeluaran di kartu ringkasan adalah Beban + Belanja Stok
         const total_pengeluaran = total_beban_operasional + total_pembelanjaan_stok;
-        
-        // Laba bersih sesuai logika WhatsApp: Pendapatan - Modal - Komisi - Beban Operasional
         const laba_bersih_final = total_pendapatan - total_modal - total_komisi - total_beban_operasional;
 
         setSummaryData({ 
@@ -136,7 +127,6 @@ function DashboardPage() {
             total_komisi,
             total_pembelanjaan_stok
         });
-        // --- AKHIR LOGIKA PERHITUNGAN BARU ---
 
       } catch (err) {
         setError('Gagal memuat data. Periksa koneksi Anda.');
@@ -148,8 +138,8 @@ function DashboardPage() {
 
     fetchData();
   }, [selectedDate, currentUser]);
-
-  const handleAddTransaction = async (e) => {
+  
+    const handleAddTransaction = async (e) => {
     e.preventDefault();
     if (!currentUser) return setError('User tidak ditemukan, silakan login ulang.');
 
@@ -200,8 +190,7 @@ function DashboardPage() {
         else setSelectedDate(new Date(selectedDate).toISOString().split('T')[0]);
     }
   };
-  
-  // --- FUNGSI BARU UNTUK COPY LAPORAN ---
+
   const handleCopyReport = () => {
     if (!summaryData || !dailyDetails) {
         alert("Data laporan belum dimuat sepenuhnya.");
@@ -219,7 +208,6 @@ function DashboardPage() {
     let reportString = `LAPORAN PEMASUKAN/PENGELUARAN TAZAKKA\n`;
     reportString += `Hari,tgl : ${formattedDate}\n\n`;
 
-    // Detail Pemasukan
     if (dailyDetails.transactions.length > 0) {
         dailyDetails.transactions.forEach((tx, index) => {
             const keuntungan = (tx.revenue || 0) - (tx.cost_of_goods || 0);
@@ -240,7 +228,6 @@ function DashboardPage() {
         });
     }
 
-    // Detail Beban Operasional
     if (dailyDetails.expenses.length > 0) {
         reportString += `Beban Operasional:\n`;
         dailyDetails.expenses.forEach(ex => {
@@ -249,7 +236,6 @@ function DashboardPage() {
         reportString += `\n`;
     }
     
-    // Total Keseluruhan
     const labaKotor = summaryData.total_pendapatan - summaryData.total_modal;
     reportString += `Total keseluruhan\n`;
     reportString += `- Pendapatan: ${formatToSimpleNumber(summaryData.total_pendapatan)}\n`;
@@ -261,7 +247,6 @@ function DashboardPage() {
     reportString += `- Total Beban Operasional: ${formatToSimpleNumber(summaryData.total_beban_operasional)}\n`;
     reportString += `- Laba Bersih: ${formatToSimpleNumber(summaryData.laba_bersih_final)}\n\n`;
 
-    // Detail Pembelanjaan Stok
     if (dailyDetails.stockPurchases.length > 0) {
         reportString += `Laporan Pembelanjaan/Pengeluaran\n`;
         reportString += `Hari, tgl : ${formattedDate}\n`;
@@ -314,8 +299,6 @@ function DashboardPage() {
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "EAEAEA" } } };
         const rupiahFormat = '"Rp"#,##0;[Red]-"Rp"#,##0';
         
-        // NOTE: Perhitungan Laba Bersih di Excel ini mungkin berbeda dengan di dashboard
-        // Jika ingin disamakan, totalKomisi di bawah ini perlu diubah logikanya
         const totalPendapatanKotor = transactions.reduce((sum, tx) => sum + tx.revenue, 0);
         const totalModal = transactions.reduce((sum, tx) => sum + tx.cost_of_goods, 0);
         const labaKotor = totalPendapatanKotor - totalModal;
@@ -337,9 +320,12 @@ function DashboardPage() {
             ["LABA BERSIH FINAL", formatToNumber(labaBersihFinal)],
             [],
             ["DETAIL PEMASUKAN"],
-            ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Komisi (%)"]
+            // --- PERUBAHAN 1 (EXCEL): Menambah header kolom "Jumlah Komisi (Rp)" ---
+            ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Jumlah Komisi (Rp)", "Komisi (%)"]
         ];
         transactions.forEach(tx => {
+            // --- PERUBAHAN 2 (EXCEL): Menghitung komisi dalam Rupiah ---
+            const commissionAmount = ((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100;
             pemasukanData.push([
                 new Date(tx.transaction_date).toLocaleDateString('id-ID'),
                 tx.customer_name,
@@ -348,12 +334,14 @@ function DashboardPage() {
                 formatToNumber(tx.revenue),
                 formatToNumber(tx.cost_of_goods),
                 tx.technician_name || '-',
+                formatToNumber(commissionAmount), // Menambahkan data komisi Rupiah
                 tx.commission_percentage || 0
             ]);
         });
 
         const wsPemasukan = XLSX.utils.aoa_to_sheet(pemasukanData);
-        wsPemasukan['!cols'] = [{wch:12}, {wch:20}, {wch:35}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:10}];
+        // --- PERUBAHAN 3 (EXCEL): Menyesuaikan lebar kolom ---
+        wsPemasukan['!cols'] = [{wch:12}, {wch:20}, {wch:35}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:18}, {wch:10}];
 
         const rangePemasukan = XLSX.utils.decode_range(wsPemasukan['!ref']);
         for (let R = rangePemasukan.s.r; R <= rangePemasukan.e.r; ++R) {
@@ -363,7 +351,8 @@ function DashboardPage() {
                     if (wsPemasukan[cellRef]) wsPemasukan[cellRef].s = headerStyle;
                 }
             }
-            const currencyCols = [1, 4, 5];
+            // --- PERUBAHAN 4 (EXCEL): Menambah kolom komisi (indeks 7) ke daftar format Rupiah ---
+            const currencyCols = [1, 4, 5, 7]; // Kolom B, E, F, H
             for (const C of currencyCols) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 const cell = wsPemasukan[cellRef];
@@ -449,19 +438,15 @@ function DashboardPage() {
         <h1>{getTitle()}</h1>
         <div className="filter-controls">
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-          
-          {/* --- TOMBOL COPY BARU DITAMBAHKAN DI SINI --- */}
           <button onClick={handleCopyReport} className="btn btn-info" title="Salin Laporan Harian">
             <FiCopy style={{ marginRight: '5px' }} /> Copy Laporan
           </button>
-
           {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
             <button onClick={() => setShowImportModal(true)} className="btn btn-warning">Import Data</button>
           )}
           {currentUser && currentUser.role !== 'kasir' && (
             <button onClick={handleExportXLSX} className="btn btn-success">Download Laporan</button>
           )}
-
         </div>
       </div>
       
@@ -533,29 +518,37 @@ function DashboardPage() {
                         <>
                             <th>Modal</th>
                             <th>Teknisi</th>
+                            {/* --- PERUBAHAN 5 (WEB): Menambah header kolom "Komisi" --- */}
+                            <th>Komisi</th>
                             <th>Aksi</th>
                         </>
                     )}
                   </tr>
                 </thead>
                 <tbody>
-                  {dailyDetails.transactions.map(tx => (
-                    <tr key={tx.id}>
-                        <td>{tx.description}</td>
-                        <td>{tx.customer_name}</td>
-                        <td>{formatToRupiah(tx.revenue)}</td>
-                        {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
-                            <>
-                                <td>{formatToRupiah(tx.cost_of_goods)}</td>
-                                <td>{tx.technician_name || '-'}</td>
-                                <td>
-                                    <button onClick={() => handleOpenEditModal(tx, 'transactions')} className="btn-icon"><FiEdit /></button>
-                                    <button onClick={() => handleDelete('transactions', tx.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
-                                </td>
-                            </>
-                        )}
-                    </tr>
-                  ))}
+                  {dailyDetails.transactions.map(tx => {
+                    // --- PERUBAHAN 6 (WEB): Menghitung komisi untuk ditampilkan di tabel ---
+                    const commissionAmount = ((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100;
+                    return (
+                        <tr key={tx.id}>
+                            <td>{tx.description}</td>
+                            <td>{tx.customer_name}</td>
+                            <td>{formatToRupiah(tx.revenue)}</td>
+                            {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
+                                <>
+                                    <td>{formatToRupiah(tx.cost_of_goods)}</td>
+                                    <td>{tx.technician_name || '-'}</td>
+                                    {/* Menampilkan data komisi dalam Rupiah */}
+                                    <td>{formatToRupiah(commissionAmount)}</td>
+                                    <td>
+                                        <button onClick={() => handleOpenEditModal(tx, 'transactions')} className="btn-icon" title="Edit"><FiEdit /></button>
+                                        <button onClick={() => handleDelete('transactions', tx.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
+                                    </td>
+                                </>
+                            )}
+                        </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -581,8 +574,8 @@ function DashboardPage() {
                                 <td>{formatToRupiah(ex.amount)}</td>
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                     <td>
-                                        <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon"><FiEdit /></button>
-                                        <button onClick={() => handleDelete('expenses', ex.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
+                                        <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon" title="Edit"><FiEdit /></button>
+                                        <button onClick={() => handleDelete('expenses', ex.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
                                     </td>
                                 )}
                             </tr>
@@ -610,8 +603,8 @@ function DashboardPage() {
                                 <td>{formatToRupiah(sp.amount)}</td>
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                     <td>
-                                        <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon"><FiEdit /></button>
-                                        <button onClick={() => handleDelete('stock_purchases', sp.id)} className="btn-icon btn-delete"><FiTrash2 /></button>
+                                        <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon" title="Edit"><FiEdit /></button>
+                                        <button onClick={() => handleDelete('stock_purchases', sp.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
                                     </td>
                                 )}
                             </tr>

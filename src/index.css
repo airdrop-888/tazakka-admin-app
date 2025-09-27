@@ -75,11 +75,45 @@ th { background-color: #f2f2f2; font-weight: bold; }
 table tbody tr:nth-child(even) { background-color: #f8f9fa; }
 table tbody tr:hover { background-color: #e9ecef; }
 
+/* Gaya Tombol Aksi Lama (mungkin masih dipakai di halaman lain) */
 .action-button-container { display: flex; justify-content: center; align-items: center; gap: 8px; }
 .action-button { display: inline-flex; align-items: center; justify-content: center; border: none; padding: 8px; border-radius: 5px; cursor: pointer; color: white; font-size: 16px; transition: opacity 0.2s ease; }
 .action-button:hover { opacity: 0.8; }
 .edit-button { background-color: #f39c12; }
 .delete-button { background-color: #e74c3c; }
+
+/* === KODE BARU YANG DITAMBAHKAN & DISEMPURNAKAN === */
+/* Gaya Tombol Aksi Ikon Modern (untuk Dashboard) */
+.btn-icon {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%; /* Membuatnya bulat */
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  color: #555; /* Warna ikon default */
+}
+
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-icon:hover {
+  background-color: #e9ecef; /* Warna latar saat di-hover, disamakan dengan hover baris tabel */
+  color: #2c3e50;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: #fadbd8; /* Latar merah muda untuk tombol hapus */
+  color: #c0392b; /* Ikon menjadi merah saat di-hover */
+}
+/* === AKHIR KODE BARU === */
+
 
 /* --- Pesan Error --- */
 .error {
@@ -150,6 +184,8 @@ table tbody tr:hover { background-color: #e9ecef; }
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.btn-info { background-color: #0dcaf0; color: #000; border: 1px solid #0dcaf0;}
+.btn-info:hover { background-color: #31d2f2; }
 .btn-warning { background-color: #ffc107; color: #000; border: 1px solid #ffc107; }
 .btn-warning:hover { background-color: #ffca2c; }
 .btn-success { background-color: #198754; color: white; border: 1px solid #198754; }
