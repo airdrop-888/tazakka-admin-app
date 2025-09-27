@@ -247,7 +247,7 @@ table tbody tr:hover { background-color: #e9ecef; }
 
 
 /* === SEMUA STYLE RESPONSIVE UNTUK MOBILE === */
-@media (max-width: 768px) {
+@media (max-width: 680px) {
   
   /* --- A. STYLE UMUM UNTUK DASHBOARD & ANALYTICS --- */
   .analytics-header, .analytics-content-wrapper {
