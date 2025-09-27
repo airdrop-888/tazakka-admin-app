@@ -1,4 +1,4 @@
-// frontend/src/pages/AnalyticsPage.jsx (KODE FINAL DENGAN DEFAULT TANGGAL SAAT INI DAN UI MOBILE RESPONSIVE)
+// frontend/src/pages/AnalyticsPage.jsx (KODE FINAL GABUNGAN DENGAN PERBAIKAN QUERY & UI CHART)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
@@ -33,9 +33,9 @@ function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [selectedDate, setSelectedDate] = useState(getLocalDate()); 
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); 
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); 
+  const [selectedDate, setSelectedDate] = useState(getLocalDate());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const months = Array.from({length: 12}, (_, i) => ({ value: i + 1, label: new Date(0, i).toLocaleString('id-ID', { month: 'long' }) }));
   const years = Array.from({length: 5}, (_, i) => new Date().getFullYear() - i);
@@ -61,6 +61,7 @@ function AnalyticsPage() {
         endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
       }
 
+      // === PERBAIKAN QUERY: Memastikan kolom 'expense_date' digunakan secara konsisten ===
       const [transactionsRes, expensesRes] = await Promise.all([
         supabase.from('transactions').select('*').gte('transaction_date', startDate.toISOString()).lte('transaction_date', endDate.toISOString()),
         supabase.from('operational_expenses').select('*').gte('expense_date', startDate.toISOString()).lte('expense_date', endDate.toISOString())
@@ -249,16 +250,13 @@ function AnalyticsPage() {
         scales: {
             x: {
                 ticks: {
-                    // === PERBAIKAN UTAMA DI SINI ===
-                    autoSkip: true,       // Izinkan Chart.js untuk melewati beberapa label
-                    maxTicksLimit: isMobile ? 8 : 31, // Batasi jumlah maksimum label di mobile
-                    maxRotation: 90, 
-                    minRotation: 90,
+                    // === PERBAIKAN UTAMA: Menghapus rotasi paksa & membiarkan auto-skip ===
+                    autoSkip: true,
+                    maxTicksLimit: isMobile ? 10 : 31,
                 }
             },
             y: {
                 ticks: {
-                    // Format angka menjadi lebih ringkas (misal: 10jt)
                     callback: function(value) {
                         if (value >= 1000000) {
                             return (value / 1000000) + 'jt';
