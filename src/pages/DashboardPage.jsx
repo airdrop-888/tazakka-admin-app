@@ -478,7 +478,7 @@ function DashboardPage() {
             
             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
               <>
-                {/* === KODE BARU: Wrapper untuk Form Desktop === */}
+                {/* === Wrapper untuk Form Desktop === */}
                 <div className="forms-wrapper-desktop" style={{ marginTop: '30px' }}>
                   <div>
                     <h2>Tambah Pemasukan</h2>
@@ -520,7 +520,7 @@ function DashboardPage() {
                   </div>
                 </div>
 
-                {/* === KODE BARU: Wrapper untuk Form Mobile dengan Tabs === */}
+                {/* === Wrapper untuk Form Mobile dengan Tabs === */}
                 <div className="forms-wrapper-mobile">
                     <div className="form-tabs">
                         <button onClick={() => setActiveTab('pemasukan')} className={activeTab === 'pemasukan' ? 'active' : ''}>Pemasukan</button>
@@ -600,15 +600,15 @@ function DashboardPage() {
                     const commissionAmount = ((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100;
                     return (
                         <tr key={tx.id}>
-                            <td>{tx.description}</td>
-                            <td>{tx.customer_name}</td>
-                            <td>{formatToRupiah(tx.revenue)}</td>
+                            <td data-label="Deskripsi">{tx.description}</td>
+                            <td data-label="Pelanggan">{tx.customer_name}</td>
+                            <td data-label="Pendapatan">{formatToRupiah(tx.revenue)}</td>
                             {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
                                 <>
-                                    <td>{formatToRupiah(tx.cost_of_goods)}</td>
-                                    <td>{tx.technician_name || '-'}</td>
-                                    <td>{formatToRupiah(commissionAmount)}</td>
-                                    <td>
+                                    <td data-label="Modal">{formatToRupiah(tx.cost_of_goods)}</td>
+                                    <td data-label="Teknisi">{tx.technician_name || '-'}</td>
+                                    <td data-label="Komisi">{formatToRupiah(commissionAmount)}</td>
+                                    <td data-label="Aksi">
                                         <button onClick={() => handleOpenEditModal(tx, 'transactions')} className="btn-icon" title="Edit"><FiEdit /></button>
                                         <button onClick={() => handleDelete('transactions', tx.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
                                     </td>
@@ -638,10 +638,10 @@ function DashboardPage() {
                     <tbody>
                         {dailyDetails.expenses.map(ex => (
                             <tr key={ex.id}>
-                                <td>{ex.description}</td>
-                                <td>{formatToRupiah(ex.amount)}</td>
+                                <td data-label="Deskripsi">{ex.description}</td>
+                                <td data-label="Jumlah">{formatToRupiah(ex.amount)}</td>
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
-                                    <td>
+                                    <td data-label="Aksi">
                                         <button onClick={() => handleOpenEditModal(ex, 'expenses')} className="btn-icon" title="Edit"><FiEdit /></button>
                                         <button onClick={() => handleDelete('expenses', ex.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
                                     </td>
@@ -667,10 +667,10 @@ function DashboardPage() {
                     <tbody>
                         {dailyDetails.stockPurchases.map(sp => (
                             <tr key={sp.id}>
-                                <td>{sp.description}</td>
-                                <td>{formatToRupiah(sp.amount)}</td>
+                                <td data-label="Deskripsi">{sp.description}</td>
+                                <td data-label="Jumlah">{formatToRupiah(sp.amount)}</td>
                                 {currentUser && (currentUser.role === 'pengelola' || currentUser.role === 'admin') && (
-                                    <td>
+                                    <td data-label="Aksi">
                                         <button onClick={() => handleOpenEditModal(sp, 'stock_purchases')} className="btn-icon" title="Edit"><FiEdit /></button>
                                         <button onClick={() => handleDelete('stock_purchases', sp.id)} className="btn-icon btn-delete" title="Hapus"><FiTrash2 /></button>
                                     </td>

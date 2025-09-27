@@ -1,4 +1,4 @@
-/* frontend/src/index.css (KODE LENGKAP FINAL - SEMUA STYLE TERMASUK KELOLA STAF) */
+/* frontend/src/index.css (KODE LENGKAP FINAL - SEMUA STYLE TERMASUK KELOLA STAF & UI MOBILE BARU) */
 
 /* --- Global Box Sizing --- */
 html {
@@ -68,6 +68,10 @@ input, select, button {
   border: 1px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
+/* Di versi desktop, kita beri background putih agar tidak transparan */
+.table-container table {
+  background-color: #ffffff;
+}
 
 table { width: 100%; border-collapse: collapse; }
 th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
@@ -75,27 +79,20 @@ th { background-color: #f2f2f2; font-weight: bold; }
 table tbody tr:nth-child(even) { background-color: #f8f9fa; }
 table tbody tr:hover { background-color: #e9ecef; }
 
-/* Gaya Tombol Aksi Lama (mungkin masih dipakai di halaman lain) */
-.action-button-container { display: flex; justify-content: center; align-items: center; gap: 8px; }
-.action-button { display: inline-flex; align-items: center; justify-content: center; border: none; padding: 8px; border-radius: 5px; cursor: pointer; color: white; font-size: 16px; transition: opacity 0.2s ease; }
-.action-button:hover { opacity: 0.8; }
-.edit-button { background-color: #f39c12; }
-.delete-button { background-color: #e74c3c; }
 
-/* === KODE BARU YANG DITAMBAHKAN & DISEMPURNAKAN === */
 /* Gaya Tombol Aksi Ikon Modern (untuk Dashboard) */
 .btn-icon {
   background-color: transparent;
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 50%; /* Membuatnya bulat */
+  border-radius: 50%;
   margin: 0 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-  color: #555; /* Warna ikon default */
+  color: #555;
 }
 
 .btn-icon svg {
@@ -104,15 +101,14 @@ table tbody tr:hover { background-color: #e9ecef; }
 }
 
 .btn-icon:hover {
-  background-color: #e9ecef; /* Warna latar saat di-hover, disamakan dengan hover baris tabel */
+  background-color: #e9ecef;
   color: #2c3e50;
 }
 
 .btn-icon.btn-delete:hover {
-  background-color: #fadbd8; /* Latar merah muda untuk tombol hapus */
-  color: #c0392b; /* Ikon menjadi merah saat di-hover */
+  background-color: #fadbd8;
+  color: #c0392b;
 }
-/* === AKHIR KODE BARU === */
 
 
 /* --- Pesan Error --- */
@@ -222,13 +218,12 @@ table tbody tr:hover { background-color: #e9ecef; }
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* --- STYLE UNTUK LAYOUT HALAMAN ANALYTICS --- */
+/* --- STYLE UNTUK LAYOUT HALAMAN ANALYTICS & KELOLA STAF (TIDAK BERUBAH) --- */
 .analytics-page-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
-
 .analytics-content-wrapper {
   flex-grow: 1;
   overflow-y: auto;
@@ -236,15 +231,12 @@ table tbody tr:hover { background-color: #e9ecef; }
   padding-top: 30px;
   padding-right: 15px;
 }
-
-/* --- BLOK BARU: STYLE UNTUK LAYOUT HALAMAN KELOLA STAF --- */
 .manage-users-layout {
   display: grid;
   grid-template-columns: minmax(400px, 450px) 1fr; 
   gap: 30px;
   align-items: start;
 }
-
 .form-container {
   background-color: #ffffff;
   padding: 25px 30px;
@@ -252,13 +244,11 @@ table tbody tr:hover { background-color: #e9ecef; }
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-
 .manage-users-layout .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
-
 .form-label {
   display: block;
   font-size: 14px;
@@ -266,19 +256,16 @@ table tbody tr:hover { background-color: #e9ecef; }
   color: #475569;
   margin-bottom: 8px;
 }
-
 .form-actions {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
 }
-
 .form-actions .btn {
   width: auto;
   padding-left: 30px;
   padding-right: 30px;
 }
-
 .manage-users-layout select {
     width: 100%;
     padding: 12px;
@@ -287,36 +274,41 @@ table tbody tr:hover { background-color: #e9ecef; }
     font-size: 16px;
     background-color: white;
 }
-
 @media (max-width: 992px) {
   .manage-users-layout {
     grid-template-columns: 1fr;
   }
 }
 
-/* === STYLE SPESIFIK UNTUK DASHBOARD & TAMPILAN MOBILE === */
-/* (Tambahkan kode ini di akhir file index.css Anda) */
-
-/* Wrapper untuk 3 form di versi desktop */
+/* === STYLE SPESIFIK UNTUK DASHBOARD (DESKTOP) === */
 .forms-wrapper-desktop {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
-/* Wrapper untuk form versi mobile, default-nya disembunyikan */
 .forms-wrapper-mobile {
   display: none; 
 }
 
 
+/* === KODE BARU DAN YANG DISEMPURNAKAN UNTUK MOBILE === */
 /* --- Media Query untuk Tampilan Mobile (misal, layar di bawah 768px) --- */
 @media (max-width: 768px) {
 
-  /* 1. Atur ulang grid Ringkasan menjadi 2 kolom */
+  /* 1. Atur ulang grid Ringkasan menjadi 2 kolom dan lebih ringkas */
   .report-grid {
-    grid-template-columns: 1fr 1fr; /* Paksa menjadi 2 kolom */
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
+  }
+  .report-card {
+    padding: 15px;
+  }
+  .report-card h3 {
+    font-size: 13px; /* Perkecil font judul kartu */
+  }
+  .report-card p {
+    font-size: 20px; /* Perkecil font angka */
   }
 
   /* 2. Sembunyikan form versi desktop */
@@ -324,34 +316,39 @@ table tbody tr:hover { background-color: #e9ecef; }
     display: none;
   }
 
-  /* 3. Tampilkan wrapper form mobile dan beri style pada tabs */
+  /* 3. Tampilkan wrapper form mobile dan beri style pada tabs yang lebih modern */
   .forms-wrapper-mobile {
-    display: block; /* Tampilkan di mobile */
+    display: block;
     margin-top: 30px;
   }
 
   .form-tabs {
     display: flex;
-    border-bottom: 1px solid #e0e0e0;
+    background-color: #e9ecef; /* Beri latar belakang */
+    border-radius: 10px;
+    padding: 5px;
     margin-bottom: 20px;
+    border-bottom: none; /* Hapus border bawah yang lama */
   }
 
   .form-tabs button {
-    flex-grow: 1; /* Agar lebar tombol sama rata */
-    padding: 12px 10px;
+    flex-grow: 1;
+    padding: 10px 5px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     border: none;
+    border-radius: 8px; /* Buat tombol di dalam tab lebih rounded */
     background-color: transparent;
-    color: #7f8c8d;
-    border-bottom: 3px solid transparent; /* Garis bawah non-aktif */
-    transition: all 0.2s ease-in-out;
+    color: #495057;
+    transition: all 0.3s ease;
+    border-bottom: none; /* Hapus border bawah yang lama */
   }
   
   .form-tabs button.active {
-    color: #3498db; /* Warna biru primer Anda */
-    border-bottom-color: #3498db; /* Garis bawah untuk tab aktif */
+    background-color: #ffffff;
+    color: #3498db;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
 
   /* 4. Beri style pada konten form di bawah tabs */
@@ -362,4 +359,75 @@ table tbody tr:hover { background-color: #e9ecef; }
     border: 1px solid #e0e0e0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
+  
+  /* 5. Perubahan Fundamental: Mengubah Tabel menjadi Daftar Kartu */
+  .table-container {
+    border: none;
+    box-shadow: none;
+    background-color: transparent; /* Latar belakang container jadi transparan */
+  }
+  
+  /* Sembunyikan header tabel di mobile */
+  .table-container thead {
+    display: none;
+  }
+
+  /* Ubah <tr> menjadi kartu */
+  .table-container tr {
+    display: block;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  /* Hapus background zebra striping */
+  table tbody tr:nth-child(even) { 
+    background-color: #ffffff; 
+  }
+
+  /* Ubah <td> menjadi baris di dalam kartu */
+  .table-container td {
+    display: block;
+    text-align: right; /* Ratakan konten (angka) ke kanan */
+    padding-left: 50%; /* Beri ruang untuk label di kiri */
+    position: relative;
+    border: none; /* Hapus border sel */
+    padding-bottom: 10px;
+    padding-top: 10px;
+    border-bottom: 1px solid #f0f0f0; /* Beri garis pemisah antar data */
+  }
+  .table-container tr:last-child {
+      margin-bottom: 0; /* Hapus margin bawah di kartu terakhir */
+  }
+  .table-container td:last-child {
+      border-bottom: none; /* Hapus garis di item terakhir dalam kartu */
+  }
+
+  /* Buat label di kiri menggunakan pseudo-element ::before */
+  .table-container td::before {
+    content: attr(data-label); /* Ambil teks label dari atribut data-label */
+    position: absolute;
+    left: 0;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    text-align: left;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+
+  /* Atur ulang bagian tombol aksi di dalam kartu */
+  .table-container td[data-label="Aksi"] {
+    display: flex;
+    justify-content: flex-end; /* Pindahkan tombol ke kanan */
+    align-items: center;
+    padding-top: 15px;
+    padding-left: 0; /* Hapus padding kiri khusus untuk sel aksi */
+  }
+  .table-container td[data-label="Aksi"]::before {
+    display: none; /* Sembunyikan label "Aksi" */
+  }
+
 }
