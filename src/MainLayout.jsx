@@ -1,50 +1,65 @@
-// frontend/src/MainLayout.jsx (KODE FINAL DAN LENGKAP)
+// frontend/src/MainLayout.jsx (KODE FINAL DENGAN LOGOUT TETAP DI BAWAH)
 
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { supabase } from './supabaseClient'; // Diimpor untuk fungsi logout
-import { FiGrid, FiUsers, FiLogOut, FiBarChart2, FiChevronsLeft, FiChevronsRight, FiShoppingCart } from 'react-icons/fi';
-import { useUser } from './UserContext'; // Digunakan untuk mendapatkan data user
+import { supabase } from './supabaseClient';
+import { 
+    FiGrid, 
+    FiUsers, 
+    FiLogOut, 
+    FiBarChart2, 
+    FiChevronsLeft, 
+    FiChevronsRight, 
+    FiShoppingCart,
+    FiMenu,
+    FiX
+} from 'react-icons/fi';
+import { useUser } from './UserContext';
 import './MainLayout.css';
 
-// Komponen tidak lagi menerima prop `onLogout`
+// Custom hook untuk deteksi ukuran layar (tidak ada perubahan)
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [query]);
+  return matches;
+};
+
 const MainLayout = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const currentUser = useUser(); // Mengambil data user (role, nama) dari context
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const currentUser = useUser();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Fungsi logout yang modern, langsung memanggil Supabase
   const handleLogoutClick = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error saat logout:', error);
     }
-    // Tidak perlu navigasi, App.jsx akan menangani redirect secara otomatis
   };
 
-  const toggleSidebar = () => {
+  const toggleDesktopSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
-
-  // useEffect untuk menangani sidebar collapse di layar kecil
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 992) {
-        setIsCollapsed(true);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen(!isMobileSidebarOpen);
+  };
 
   return (
     <div className="layout-container">
-      <nav className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <nav className={`sidebar ${isCollapsed && !isMobile ? 'collapsed' : ''} ${isMobile && isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <h2 className="brand">Tazakka Admin</h2>
-          <button onClick={toggleSidebar} className="toggle-button">
-            {isCollapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
-          </button>
+          {!isMobile && (
+            <button onClick={toggleDesktopSidebar} className="toggle-button">
+              {isCollapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+            </button>
+          )}
         </div>
         
         <div className="user-info">
@@ -58,49 +73,41 @@ const MainLayout = ({ children }) => {
           )}
         </div>
 		
-        {/* === AWAL BLOK NAVIGASI DENGAN LOGIKA YANG SUDAH DIVERIFIKASI === */}
-
-        {/* Menu Kasir: Ditampilkan untuk semua role KECUALI 'pemilik'. */}
-        {currentUser && currentUser.role !== 'pemilik' && (
-          <NavLink to="/kasir" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-            <FiShoppingCart />
-            <span>Kasir</span>
-          </NavLink>
-        )}
-                
-        {/* Menu Dashboard: Ditampilkan untuk semua role. */}
-        <NavLink to="/" end className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-          <FiGrid />
-          <span>Dashboard</span>
-        </NavLink>
-                
-        {/* Menu Analytics: Ditampilkan untuk semua role KECUALI 'kasir'. */}
-        {currentUser && currentUser.role !== 'kasir' && (
-            <NavLink to="/analytics" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-              <FiBarChart2 />
-              <span>Analytics</span>
-            </NavLink>
-        )}
-                
-        {/* Menu Kelola Staf: Ditampilkan HANYA untuk role 'pengelola'. */}
-        {currentUser && currentUser.role === 'pengelola' && (
-            <NavLink to="/manage-users" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-              <FiUsers />
-              <span>Kelola Staf</span>
-            </NavLink>
-        )}
-
-        {/* === AKHIR BLOK NAVIGASI === */}
+        {/* === PERUBAHAN UTAMA: BUNGKUS NAVLINK DALAM DIV BARU === */}
+        {/* Div ini akan menjadi area scroll, memisahkan link dari tombol logout */}
+        <div className="sidebar-nav">
+          {currentUser && currentUser.role !== 'pemilik' && (<NavLink to="/kasir" className="nav-link"><FiShoppingCart /><span>Kasir</span></NavLink>)}
+          <NavLink to="/" end className="nav-link"><FiGrid /><span>Dashboard</span></NavLink>
+          {currentUser && currentUser.role !== 'kasir' && (<NavLink to="/analytics" className="nav-link"><FiBarChart2 /><span>Analytics</span></NavLink>)}
+          {currentUser && currentUser.role === 'pengelola' && (<NavLink to="/manage-users" className="nav-link"><FiUsers /><span>Kelola Staf</span></NavLink>)}
+        </div>
         
+        {/* Tombol logout sekarang berada di luar div .sidebar-nav */}
         <button onClick={handleLogoutClick} className="logout-button">
           <FiLogOut />
           <span>Logout</span>
         </button>
       </nav>
 
+      <div 
+          className={`sidebar-overlay ${isMobileSidebarOpen ? 'active' : ''}`}
+          onClick={toggleMobileSidebar}
+      ></div>
+
       <main className="main-content">
         {children}
       </main>
+
+      {isMobile && (
+        <button 
+          className={`mobile-fab ${isMobileSidebarOpen ? 'open' : ''}`} 
+          onClick={toggleMobileSidebar}
+          aria-label="Toggle sidebar"
+        >
+          <FiMenu className="fab-icon-menu" />
+          <FiX className="fab-icon-close" />
+        </button>
+      )}
     </div>
   );
 };

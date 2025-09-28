@@ -1,4 +1,4 @@
-// frontend/src/pages/ManageUsersPage.jsx (VERSI FINAL LENGKAP DENGAN ROLE PEMILIK)
+// frontend/src/pages/ManageUsersPage.jsx (Lengkap dengan Penyempurnaan UI dan data-label untuk mobile)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
@@ -46,27 +46,19 @@ const ManageUsersPage = () => {
         setError('Username dan Password tidak boleh kosong.');
         return;
     }
-
-    // Payload yang akan dikirim ke backend, sudah siap menangani role apapun yang dipilih
     const payload = {
       username: username,
-      email: `${username}@tazakkagroupservice.com`, // Trik email fiktif yang konsisten
+      email: `${username}@tazakkagroupservice.com`,
       password: password,
       full_name: fullName,
       role: role,
     };
-    console.log("Payload yang akan dikirim ke Edge Function:", payload);
-
     try {
-      // Panggil Edge Function dengan payload yang sudah dibuat
       const { data: functionData, error: functionError } = await supabase.functions.invoke('create-user', {
         body: payload,
       });
-
       if (functionError) throw functionError;
       if (functionData.error) throw new Error(functionData.error);
-
-      // Reset form dan ambil ulang daftar user terbaru
       setUsername('');
       setPassword('');
       setFullName('');
@@ -85,10 +77,8 @@ const ManageUsersPage = () => {
         const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
           body: { userId: userId },
         });
-
         if (functionError) throw functionError;
         if (functionData.error) throw new Error(functionData.error);
-
         await fetchUsers();
       } catch (err)
  {
@@ -110,15 +100,17 @@ const ManageUsersPage = () => {
 
   return (
     <div className="container">
-      <h1 style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
-        <FiUsers /> Kelola Staf
-      </h1>
+      <header className="page-header">
+        <h1>
+          <FiUsers /> Kelola Staf
+        </h1>
+      </header>
       
       <div className="manage-users-layout">
         <div className="form-container card-style">
-          <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px' }}>
+          <h2 className="card-title">
             <FiUserPlus /> Tambah Staf Baru
-          </h3>
+          </h2>
           <form onSubmit={handleAddUser}>
             <div className="form-grid">
               <div>
@@ -151,7 +143,7 @@ const ManageUsersPage = () => {
         </div>
 
         <div className="user-list-container card-style">
-          <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Daftar Pengguna Saat Ini</h2>
+          <h2 className="card-title">Daftar Pengguna Saat Ini</h2>
           <div className="table-container">
             <table>
               <thead>
@@ -166,11 +158,12 @@ const ManageUsersPage = () => {
               <tbody>
                 {users.map(user => (
                   <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.username}</td>
-                    <td>{user.full_name || '-'}</td>
-                    <td>{user.role}</td>
-                    <td>
+                    {/* --- KODE BARU DIMULAI DI SINI: Atribut data-label ditambahkan --- */}
+                    <td data-label="ID" title={user.id}>{user.id.substring(0, 8)}...</td>
+                    <td data-label="Username">{user.username}</td>
+                    <td data-label="Nama Lengkap">{user.full_name || '-'}</td>
+                    <td data-label="Peran">{user.role}</td>
+                    <td data-label="Aksi">
                       <div className="action-button-container">
                         <button onClick={() => handleOpenEditModal(user)} className="action-button edit-button" title="Edit User">
                           <FiEdit />
@@ -180,6 +173,7 @@ const ManageUsersPage = () => {
                         </button>
                       </div>
                     </td>
+                    {/* --- AKHIR DARI KODE BARU --- */}
                   </tr>
                 ))}
               </tbody>

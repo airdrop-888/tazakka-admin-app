@@ -1,9 +1,10 @@
-// frontend/src/pages/KasirPage.jsx (VERSI FINAL DENGAN DEBUG CHECKOUT)
+// frontend/src/pages/KasirPage.jsx (VERSI FINAL DENGAN UI MOBILE BARU TERINTEGRASI)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../UserContext';
-import { FiPlusCircle, FiX, FiMinus, FiPlus, FiSearch, FiPackage, FiEdit, FiTrash2, FiUser, FiTool, FiCheckCircle } from 'react-icons/fi';
+// PERBAIKAN: Menambahkan FiShoppingCart dan FiArrowLeft untuk UI mobile
+import { FiPlusCircle, FiX, FiMinus, FiPlus, FiSearch, FiPackage, FiEdit, FiTrash2, FiUser, FiTool, FiCheckCircle, FiShoppingCart, FiArrowLeft } from 'react-icons/fi';
 import './KasirPage.css';
 
 // --- Helper Functions ---
@@ -18,8 +19,23 @@ const parseRupiah = (rupiahString) => {
   return String(rupiahString || '').replace(/[^0-9]/g, '');
 };
 
-// --- Komponen Modal yang Diimplementasikan ---
+// --- LOGIKA BARU 1: Custom Hook untuk deteksi mobile (konsisten dengan halaman lain) ---
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    window.addEventListener('resize', listener);
+    return () => window.removeEventListener('resize', listener);
+  }, [matches, query]);
+  return matches;
+};
 
+
+// --- Komponen Modal yang Diimplementasikan (Tidak ada perubahan) ---
 const AddCustomItemModal = ({ isOpen, onClose, onAddItem }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -131,8 +147,8 @@ const SuccessModal = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// --- Komponen Utama KasirPage ---
 
+// --- Komponen Utama KasirPage ---
 const KasirPage = () => {
   const currentUser = useUser();
   const [productList, setProductList] = useState([]);
@@ -150,6 +166,10 @@ const KasirPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // --- LOGIKA BARU 2: State untuk mengontrol UI mobile ---
+  const isMobile = useMediaQuery('(max-width: 1200px)');
+  const [isCartVisibleMobile, setIsCartVisibleMobile] = useState(false);
 
   const fetchProducts = async () => {
     setLoadingProducts(true);
@@ -214,13 +234,20 @@ const KasirPage = () => {
   const handleAddToCart = (product) => { setCart(prevCart => { const existingItem = prevCart.find(item => item.id === product.id); if (existingItem) { return prevCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); } else { return [...prevCart, { ...product, quantity: 1 }]; } }); };
   const handleRemoveFromCart = (productId) => { setCart(prevCart => prevCart.filter(item => item.id !== productId)); };
   const handleQuantityChange = (productId, newQuantity) => { if (newQuantity < 1) { handleRemoveFromCart(productId); } else { setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item)); } };
-  const summary = useMemo(() => { const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0); const total = subtotal; const change = parseFloat(parseRupiah(amountPaid)) - total; return { subtotal, total, change }; }, [cart, amountPaid]);
+  
+  // PERBAIKAN: Menambahkan `totalItems` ke kalkulasi summary untuk ditampilkan di FAB
+  const summary = useMemo(() => { 
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0); 
+    const total = subtotal; 
+    const change = parseFloat(parseRupiah(amountPaid)) - total; 
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    return { subtotal, total, change, totalItems }; 
+  }, [cart, amountPaid]);
+
   const handleOpenEditModal = (e, product) => { e.stopPropagation(); setEditingProduct(product); setIsEditModalOpen(true); };
   const resetTransaction = () => { setCart([]); setCustomerName(''); setTechnicianName(''); setPaymentMethod('Tunai'); setAmountPaid(''); setError(''); setSearchTerm(''); setActiveCategory('Semua'); };
   
-  // --- FUNGSI CHECKOUT YANG TELAH DIGABUNGKAN DAN DISEMPURNAKAN ---
   const handleCheckout = async () => {
-    console.log("1. Tombol Checkout ditekan.");
     if (cart.length === 0) { setError('Keranjang kosong.'); return; }
     if (!currentUser) { setError('Gagal mendapatkan data user. Silakan login ulang.'); return; }
     
@@ -232,33 +259,24 @@ const KasirPage = () => {
         customer_name: customerName || null,
         description: `${item.name}${item.quantity > 1 ? ` (x${item.quantity})` : ''}`,
         revenue: item.price * item.quantity,
-        cost_of_goods: (item.cost || 0) * item.quantity, // Menggunakan (item.cost || 0) untuk keamanan
+        cost_of_goods: (item.cost || 0) * item.quantity,
         technician_name: technicianName || null,
         payment_method: paymentMethod,
         transaction_date: new Date().toISOString(),
         device_category: item.device_category,
         part_category: item.part_category || 'Lainnya',
-        work_category: 'Penjualan', // Menambahkan work_category jika ada di tabel Anda
+        work_category: 'Penjualan',
         recorded_by_user_id: currentUser.id,
       };
     });
 
-    console.log("2. Data yang akan dikirim ke Supabase:", transactionsToInsert);
-
     try {
-      console.log("3. Mencoba mengirim data...");
-      const { data, error: insertError } = await supabase
-        .from('transactions')
-        .insert(transactionsToInsert)
-        .select(); // Tambahkan .select() untuk mendapatkan feedback
-
-      console.log("4. Respons dari Supabase:", { data, insertError });
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      setShowSuccessModal(true); // Tampilkan modal sukses
+      const { error: insertError } = await supabase.from('transactions').insert(transactionsToInsert).select();
+      if (insertError) { throw insertError; }
+      
+      setShowSuccessModal(true);
+      // PERBAIKAN: Otomatis tutup panel keranjang mobile setelah transaksi sukses
+      setIsCartVisibleMobile(false);
 
     } catch (err) {
       console.error('ERROR SAAT CHECKOUT:', err);
@@ -269,6 +287,59 @@ const KasirPage = () => {
   };
   
   const categories = ['Semua', ...new Set(productList.map(p => p.device_category).filter(Boolean))];
+
+  // --- LOGIKA BARU 3: Komponen render terpisah untuk sidebar agar tidak duplikasi kode ---
+  const renderSidebarContent = () => (
+    <>
+      <div className="sidebar-header-section">
+        {isMobile && (
+          <button className="mobile-cart-back-btn" onClick={() => setIsCartVisibleMobile(false)}>
+            <FiArrowLeft /> Kembali ke Produk
+          </button>
+        )}
+        <h2>Ringkasan Transaksi</h2>
+        <div className="sidebar-info-section">
+          <div className="info-input-group"><FiUser /><input type="text" placeholder="Nama Pelanggan (Opsional)" value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
+          <div className="info-input-group"><FiTool /><input type="text" placeholder="Nama Teknisi (Opsional)" value={technicianName} onChange={e => setTechnicianName(e.target.value)} /></div>
+        </div>
+      </div>
+      <div className="sidebar-content">
+        <div className="cart-items">
+          {cart.length === 0 
+            ? <p className="empty-cart">Keranjang masih kosong</p> 
+            : cart.map(item => (
+                <div key={item.id} className="cart-item">
+                  <div className="item-details"><p className="item-name">{item.name}</p><p className="item-price">{formatToRupiah(item.price)}</p></div>
+                  <div className="quantity-stepper"><button onClick={() => handleQuantityChange(item.id, item.quantity - 1)}><FiMinus /></button><span>{item.quantity}</span><button onClick={() => handleQuantityChange(item.id, item.quantity + 1)}><FiPlus /></button></div>
+                  <p className="item-subtotal">{formatToRupiah(item.price * item.quantity)}</p>
+                  <button className="remove-item-btn" onClick={() => handleRemoveFromCart(item.id)}><FiX /></button>
+                </div>
+            ))
+          }
+        </div>
+      </div>
+      <div className="sidebar-footer">
+        <div className="summary-details">
+            <div className="summary-line"><span>Subtotal</span><span>{formatToRupiah(summary.subtotal)}</span></div>
+            <div className="total-line"><span>Total Tagihan</span><span>{formatToRupiah(summary.total)}</span></div>
+        </div>
+        <div className="payment-section">
+          <label>Metode Pembayaran</label>
+          <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option>Tunai</option><option>Transfer BCA</option><option>Transfer BSI</option><option>QRIS</option></select>
+          <label>Jumlah Bayar</label>
+          <div className="payment-controls">
+              <input type="text" placeholder="Rp 0" value={formatToRupiah(amountPaid)} onChange={e => setAmountPaid(parseRupiah(e.target.value))} />
+              <button className="quick-cash-btn" onClick={() => setAmountPaid(formatToRupiah(summary.total))}>Uang Pas</button>
+          </div>
+        </div>
+        <div className="change-display"><span>Kembalian</span><span>{summary.change >= 0 ? formatToRupiah(summary.change) : '-'}</span></div>
+        {error && <p className="error" style={{textAlign: 'center', marginTop: '10px'}}>{error}</p>}
+        <button className="checkout-button" onClick={handleCheckout} disabled={isSaving || cart.length === 0}>
+          {isSaving ? 'Memproses...' : (<span><FiCheckCircle /> Selesaikan Transaksi</span>)}
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div className="kasir-layout">
@@ -317,50 +388,31 @@ const KasirPage = () => {
         </div>
       </main>
       
-      <aside className="kasir-sidebar">
-        <div className="sidebar-header-section">
-          <h2>Ringkasan Transaksi</h2>
-          <div className="sidebar-info-section">
-            <div className="info-input-group"><FiUser /><input type="text" placeholder="Nama Pelanggan (Opsional)" value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
-            <div className="info-input-group"><FiTool /><input type="text" placeholder="Nama Teknisi (Opsional)" value={technicianName} onChange={e => setTechnicianName(e.target.value)} /></div>
+      {/* --- LOGIKA BARU 4: Tampilkan sidebar atau FAB + Overlay berdasarkan ukuran layar --- */}
+      {!isMobile && (
+        <aside className="kasir-sidebar">
+          {renderSidebarContent()}
+        </aside>
+      )}
+
+      {isMobile && cart.length > 0 && (
+        <button className="fab-cart-button" onClick={() => setIsCartVisibleMobile(true)}>
+          <FiShoppingCart />
+          <div className="fab-cart-info">
+            <span>{summary.totalItems} Item</span>
+            <span>{formatToRupiah(summary.total)}</span>
           </div>
+        </button>
+      )}
+
+      {isMobile && (
+        <div className={`mobile-cart-overlay ${isCartVisibleMobile ? 'visible' : ''}`} onClick={() => setIsCartVisibleMobile(false)}>
+           <aside className="kasir-sidebar mobile-view" onClick={e => e.stopPropagation()}>
+              {renderSidebarContent()}
+           </aside>
         </div>
-        <div className="sidebar-content">
-          <div className="cart-items">
-            {cart.length === 0 
-              ? <p className="empty-cart">Keranjang masih kosong</p> 
-              : cart.map(item => (
-                  <div key={item.id} className="cart-item">
-                    <div className="item-details"><p className="item-name">{item.name}</p><p className="item-price">{formatToRupiah(item.price)}</p></div>
-                    <div className="quantity-stepper"><button onClick={() => handleQuantityChange(item.id, item.quantity - 1)}><FiMinus /></button><span>{item.quantity}</span><button onClick={() => handleQuantityChange(item.id, item.quantity + 1)}><FiPlus /></button></div>
-                    <p className="item-subtotal">{formatToRupiah(item.price * item.quantity)}</p>
-                    <button className="remove-item-btn" onClick={() => handleRemoveFromCart(item.id)}><FiX /></button>
-                  </div>
-              ))
-            }
-          </div>
-        </div>
-        <div className="sidebar-footer">
-          <div className="summary-details">
-              <div className="summary-line"><span>Subtotal</span><span>{formatToRupiah(summary.subtotal)}</span></div>
-              <div className="total-line"><span>Total Tagihan</span><span>{formatToRupiah(summary.total)}</span></div>
-          </div>
-          <div className="payment-section">
-            <label>Metode Pembayaran</label>
-            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option>Tunai</option><option>Transfer BCA</option><option>Transfer BSI</option><option>QRIS</option></select>
-            <label>Jumlah Bayar</label>
-            <div className="payment-controls">
-                <input type="text" placeholder="Rp 0" value={formatToRupiah(amountPaid)} onChange={e => setAmountPaid(parseRupiah(e.target.value))} />
-                <button className="quick-cash-btn" onClick={() => setAmountPaid(formatToRupiah(summary.total))}>Uang Pas</button>
-            </div>
-          </div>
-          <div className="change-display"><span>Kembalian</span><span>{summary.change >= 0 ? formatToRupiah(summary.change) : '-'}</span></div>
-          {error && <p className="error" style={{textAlign: 'center', marginTop: '10px'}}>{error}</p>}
-          <button className="checkout-button" onClick={handleCheckout} disabled={isSaving || cart.length === 0}>
-            {isSaving ? 'Memproses...' : (<span><FiCheckCircle /> Selesaikan Transaksi</span>)}
-          </button>
-        </div>
-      </aside>
+      )}
+      
     </div>
   );
 };

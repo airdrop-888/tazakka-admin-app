@@ -1,0 +1,86 @@
+/* frontend/src/components/StyledDatePicker.css (File Baru) */
+
+/* Wrapper untuk kalender */
+.react-datepicker-popper {
+  z-index: 10;
+}
+.custom-calendar.react-datepicker {
+  font-family: 'Inter', sans-serif;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+}
+
+/* Header (Nama bulan, tombol navigasi) */
+.custom-calendar .react-datepicker__header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding-top: 10px;
+}
+.custom-calendar .react-datepicker__current-month {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a222e;
+}
+.custom-calendar .react-datepicker__navigation {
+  top: 15px;
+}
+.custom-calendar .react-datepicker__navigation--previous {
+  border-right-color: #a0aec0;
+}
+.custom-calendar .react-datepicker__navigation--next {
+  border-left-color: #a0aec0;
+}
+
+/* Nama Hari (Su, Mo, Tu, ...) */
+.custom-calendar .react-datepicker__day-name {
+  color: #718096;
+  font-weight: 600;
+}
+
+/* Setiap tanggal */
+.custom-calendar .react-datepicker__day {
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+.custom-calendar .react-datepicker__day:hover {
+  background-color: #f1f5f9;
+  border-radius: 50%;
+}
+.custom-calendar .react-datepicker__day--selected {
+  background-color: #3498db;
+  color: white;
+  border-radius: 50%;
+}
+.custom-calendar .react-datepicker__day--keyboard-selected {
+  background-color: #dbeafe; /* Warna saat fokus keyboard */
+}
+.custom-calendar .react-datepicker__day--today {
+  font-weight: bold;
+  border: 1px solid #3498db;
+}
+
+/* Tombol input kustom */
+.custom-datepicker-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.custom-datepicker-input:hover {
+  border-color: #cbd5e0;
+}
+.custom-datepicker-input svg {
+  color: #718096;
+}
