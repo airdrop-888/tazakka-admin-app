@@ -1,4 +1,4 @@
-// frontend/src/pages/DashboardPage.jsx (Lengkap dengan Integrasi StyledDatePicker)
+// frontend/src/pages/DashboardPage.jsx (Digabungkan dengan Notifikasi Modern & Perbaikan Excel)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
@@ -7,12 +7,13 @@ import ImportModal from './ImportModal';
 import EditModal from './EditItemModal';
 import { FiEdit, FiTrash2, FiCopy, FiTrendingUp, FiArrowDownCircle, FiDollarSign, FiFileText } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import StyledDatePicker from '../components/StyledDatePicker';
 
-// --- PERBAIKAN: Impor komponen StyledDatePicker yang telah kita buat ---
-import StyledDatePicker from '../components/StyledDatePicker'; 
+// --- Impor library notifikasi ---
+import { toast } from 'react-toastify';
 
-// --- Helper Functions (Tidak Ada Perubahan) ---
+// --- Helper Functions ---
 const formatToRupiah = (number) => {
     if (number === null || number === undefined) return 'Rp 0';
     const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
@@ -27,13 +28,6 @@ const formatToSimpleNumber = (number) => {
     return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(numericValue);
 };
 
-const formatToNumber = (number) => {
-    if (number === null || number === undefined) return 0;
-    const numericValue = parseInt(String(number).replace(/[^0-9-]/g, ''), 10);
-    if (isNaN(numericValue)) return 0;
-    return numericValue;
-};
-
 const parseRupiah = (rupiahString) => String(rupiahString).replace(/[^0-9]/g, '');
 
 const getLocalDate = () => {
@@ -46,18 +40,14 @@ const getLocalDate = () => {
 // --- Akhir Helper Functions ---
 
 function DashboardPage() {
-  // --- State Management (Tidak Ada Perubahan) ---
   const currentUser = useUser();
   const [summaryData, setSummaryData] = useState(null);
   const [dailyDetails, setDailyDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getLocalDate());
-
-  // State untuk form
   const [txCustomerName, setTxCustomerName] = useState('');
   const [txDesc, setTxDesc] = useState('');
   const [txRevenue, setTxRevenue] = useState('');
@@ -70,8 +60,6 @@ function DashboardPage() {
   const [exAmount, setExAmount] = useState('');
   const [spDesc, setSpDesc] = useState('');
   const [spAmount, setSpAmount] = useState('');
-
-  // State baru untuk tab mobile
   const [activeTab, setActiveTab] = useState('pemasukan');
 
   const deviceCategories = ["Hape", "Laptop", "Printer", "Lainnya"];
@@ -82,116 +70,233 @@ function DashboardPage() {
     setTxPartCategory('');
   };
 
-  // --- Logika Fetch Data (Tidak Ada Perubahan) ---
   useEffect(() => {
     const fetchData = async () => {
       if (!selectedDate) return;
-      
       setLoading(true);
-      setError('');
+      // Reset state untuk menghindari data lama muncul saat loading
       setDailyDetails(null);
       setSummaryData(null);
-
       try {
         const startDate = `${selectedDate}T00:00:00.000Z`;
         const endDate = `${selectedDate}T23:59:59.999Z`;
-
         const [transactionsRes, expensesRes, stockPurchasesRes] = await Promise.all([
           supabase.from('transactions').select('*').gte('transaction_date', startDate).lte('transaction_date', endDate),
           supabase.from('operational_expenses').select('*').gte('expense_date', startDate).lte('expense_date', endDate),
           supabase.from('stock_purchases').select('*').gte('purchase_date', startDate).lte('purchase_date', endDate)
         ]);
-
         if (transactionsRes.error) throw transactionsRes.error;
         if (expensesRes.error) throw expensesRes.error;
         if (stockPurchasesRes.error) throw stockPurchasesRes.error;
-
         const transactions = transactionsRes.data || [];
         const expenses = expensesRes.data || [];
         const stockPurchases = stockPurchasesRes.data || [];
-        
         setDailyDetails({ transactions, expenses, stockPurchases });
-        
         const total_pendapatan = transactions.reduce((sum, tx) => sum + (tx.revenue || 0), 0);
         const total_modal = transactions.reduce((sum, tx) => sum + (tx.cost_of_goods || 0), 0);
-        
         const total_komisi = transactions.reduce((sum, tx) => {
             const profit = (tx.revenue || 0) - (tx.cost_of_goods || 0);
             const commission = (profit * (tx.commission_percentage || 0)) / 100;
             return sum + commission;
         }, 0);
-        
         const total_beban_operasional = expenses.reduce((sum, ex) => sum + (ex.amount || 0), 0);
         const total_pembelanjaan_stok = stockPurchases.reduce((sum, sp) => sum + (sp.amount || 0), 0);
-        
         const total_pengeluaran = total_beban_operasional + total_pembelanjaan_stok;
         const laba_bersih_final = total_pendapatan - total_modal - total_komisi - total_beban_operasional;
-
-        setSummaryData({ 
-            total_pendapatan, 
-            total_beban_operasional, 
-            total_pengeluaran, 
-            laba_bersih_final,
-            total_modal,
-            total_komisi,
-            total_pembelanjaan_stok
-        });
-
+        setSummaryData({ total_pendapatan, total_beban_operasional, total_pengeluaran, laba_bersih_final, total_modal, total_komisi, total_pembelanjaan_stok });
       } catch (err) {
-        setError('Gagal memuat data. Periksa koneksi Anda.');
+        toast.error('Gagal memuat data. Periksa koneksi Anda.');
         console.error("Error di fetchData:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [selectedDate, currentUser]);
-  
-  // --- Fungsi Handler (Tidak Ada Perubahan) ---
-  const handleAddTransaction = async (e) => { e.preventDefault(); if (!currentUser) return setError('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('transactions').insert([{ customer_name: txCustomerName, description: txDesc, revenue: parseFloat(txRevenue), cost_of_goods: parseFloat(txCost) || 0, technician_name: txTechnician || null, commission_percentage: parseFloat(txCommission) || null, device_category: txDeviceCategory, part_category: txPartCategory, transaction_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) setError('Gagal menyimpan transaksi: ' + error.message); else { setTxCustomerName(''); setTxDesc(''); setTxRevenue(''); setTxCost(''); setTxTechnician(''); setTxCommission(''); setTxDeviceCategory(''); setTxPartCategory(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
-  const handleAddExpense = async (e) => { e.preventDefault(); if (!currentUser) return setError('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('operational_expenses').insert([{ description: exDesc, amount: parseFloat(exAmount), expense_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) setError('Gagal menyimpan beban: ' + error.message); else { setExDesc(''); setExAmount(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
-  const handleAddStockPurchase = async (e) => { e.preventDefault(); if (!currentUser) return setError('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('stock_purchases').insert([{ description: spDesc, amount: parseFloat(spAmount), purchase_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) setError('Gagal menyimpan belanja stok: ' + error.message); else { setSpDesc(''); setSpAmount(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
-  const handleDelete = async (type, id) => { if (window.confirm("Anda yakin ingin menghapus data ini? Aksi ini tidak dapat dibatalkan.")) { const tableName = type === 'expenses' ? 'operational_expenses' : type; const { error } = await supabase.from(tableName).delete().eq('id', id); if (error) setError('Gagal menghapus data: ' + error.message); else setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
-  const handleCopyReport = () => { /* ... (Logika tidak berubah, tetap sama) ... */ };
-  const handleExportXLSX = async () => { /* ... (Logika tidak berubah, tetap sama) ... */ };
+
+  const handleAddTransaction = async (e) => { e.preventDefault(); if (!currentUser) return toast.error('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('transactions').insert([{ customer_name: txCustomerName, description: txDesc, revenue: parseFloat(txRevenue), cost_of_goods: parseFloat(txCost) || 0, technician_name: txTechnician || null, commission_percentage: parseFloat(txCommission) || null, device_category: txDeviceCategory, part_category: txPartCategory, transaction_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) toast.error('Gagal menyimpan transaksi: ' + error.message); else { toast.success('Transaksi berhasil ditambahkan!'); setTxCustomerName(''); setTxDesc(''); setTxRevenue(''); setTxCost(''); setTxTechnician(''); setTxCommission(''); setTxDeviceCategory(''); setTxPartCategory(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
+  const handleAddExpense = async (e) => { e.preventDefault(); if (!currentUser) return toast.error('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('operational_expenses').insert([{ description: exDesc, amount: parseFloat(exAmount), expense_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) toast.error('Gagal menyimpan beban: ' + error.message); else { toast.success('Beban berhasil ditambahkan!'); setExDesc(''); setExAmount(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
+  const handleAddStockPurchase = async (e) => { e.preventDefault(); if (!currentUser) return toast.error('User tidak ditemukan, silakan login ulang.'); const { error } = await supabase.from('stock_purchases').insert([{ description: spDesc, amount: parseFloat(spAmount), purchase_date: new Date(selectedDate + 'T00:00:00').toISOString(), recorded_by_user_id: currentUser.id }]); if (error) toast.error('Gagal menyimpan belanja stok: ' + error.message); else { toast.success('Belanja stok berhasil ditambahkan!'); setSpDesc(''); setSpAmount(''); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } };
+  const handleDelete = async (type, id) => { if (window.confirm("Anda yakin ingin menghapus data ini? Aksi ini tidak dapat dibatalkan.")) { const tableName = type === 'expenses' ? 'operational_expenses' : type; const { error } = await supabase.from(tableName).delete().eq('id', id); if (error) toast.error('Gagal menghapus data: ' + error.message); else { toast.success('Data berhasil dihapus.'); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); } } };
   const handleOpenEditModal = (item, type) => { setEditingItem(item); setModalType(type); };
   const handleCloseEditModal = () => { setEditingItem(null); setModalType(null); };
   const handleSaveEdit = () => { setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); handleCloseEditModal(); };
   const handleNumericInputChange = (value, setter) => { setter(parseRupiah(value)); };
 
-  // --- Proses Data untuk Grafik (Tidak Ada Perubahan) ---
+  const handleCopyReport = () => {
+    if (!summaryData || !dailyDetails) {
+        toast.warn('Data belum siap untuk disalin.');
+        return;
+    }
+    const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    
+    let reportText = `LAPORAN PEMASUKAN/PENGELUARAN TAZAKKA\n`;
+    reportText += `Hari,tgl : ${formattedDate}\n\n`;
+
+    dailyDetails.transactions.forEach((tx, index) => {
+        const keuntungan = (tx.revenue || 0) - (tx.cost_of_goods || 0);
+        const komisi = keuntungan * (tx.commission_percentage || 0) / 100;
+        const bersih = keuntungan - komisi;
+        reportText += `${index + 1}. ${tx.description}\n`;
+        reportText += `Pendapatan: ${formatToSimpleNumber(tx.revenue)}\n`;
+        if (tx.cost_of_goods > 0) {
+            reportText += `- Modal: ${formatToSimpleNumber(tx.cost_of_goods)}\n`;
+        }
+        reportText += `Keuntungan: ${formatToSimpleNumber(keuntungan)}\n`;
+        if (tx.commission_percentage > 0) {
+            reportText += `Upah Teknis ${tx.commission_percentage}%: ${formatToSimpleNumber(komisi)}\n`;
+        }
+        reportText += `Bersih: ${formatToSimpleNumber(bersih)}\n\n`;
+    });
+
+    if (dailyDetails.expenses.length > 0) {
+        reportText += `Beban Operasional:\n`;
+        dailyDetails.expenses.forEach(ex => {
+            reportText += `- ${ex.description} ${formatToSimpleNumber(ex.amount)}\n`;
+        });
+        reportText += `\n`;
+    }
+
+    const labaKotor = summaryData.total_pendapatan - summaryData.total_modal;
+    reportText += `Total keseluruhan\n`;
+    reportText += `- Pendapatan: ${formatToSimpleNumber(summaryData.total_pendapatan)}\n`;
+    reportText += `- Modal: ${formatToSimpleNumber(summaryData.total_modal)}\n`;
+    reportText += `- Keuntungan (Laba Kotor): ${formatToSimpleNumber(labaKotor)}\n`;
+    reportText += `- Total Komisi Teknisi: ${formatToSimpleNumber(summaryData.total_komisi)}\n`;
+    reportText += `- Total Beban Operasional: ${formatToSimpleNumber(summaryData.total_beban_operasional)}\n`;
+    reportText += `- Laba Bersih: ${formatToSimpleNumber(summaryData.laba_bersih_final)}\n\n`;
+
+    if (dailyDetails.stockPurchases.length > 0) {
+        reportText += `Laporan Pembelanjaan/Pengeluaran\n`;
+        reportText += `Hari, tgl : ${formattedDate}\n`;
+        dailyDetails.stockPurchases.forEach(sp => {
+            reportText += `- ${sp.description} ${formatToSimpleNumber(sp.amount)}\n`;
+        });
+        reportText += `Total: ${formatToSimpleNumber(summaryData.total_pembelanjaan_stok)}\n`;
+    }
+
+    navigator.clipboard.writeText(reportText)
+        .then(() => toast.success('Laporan harian berhasil disalin ke clipboard!'))
+        .catch(err => toast.error('Gagal menyalin laporan: ' + err));
+  };
+
+  const handleExportXLSX = async () => {
+    toast.info('Mengunduh laporan bulanan. Mohon tunggu...');
+    try {
+        const selected = new Date(selectedDate + 'T00:00:00');
+        const year = selected.getFullYear();
+        const month = selected.getMonth();
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        const monthName = monthNames[month].toUpperCase();
+        const startDate = new Date(year, month, 1, 0, 0, 0, 0).toISOString();
+        const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString();
+
+        const [transactionsRes, expensesRes, stockPurchasesRes] = await Promise.all([
+          supabase.from('transactions').select('*').gte('transaction_date', startDate).lte('transaction_date', endDate).order('transaction_date', { ascending: true }),
+          supabase.from('operational_expenses').select('*').gte('expense_date', startDate).lte('expense_date', endDate).order('expense_date', { ascending: true }),
+          supabase.from('stock_purchases').select('*').gte('purchase_date', startDate).lte('purchase_date', endDate).order('purchase_date', { ascending: true })
+        ]);
+        if (transactionsRes.error || expensesRes.error || stockPurchasesRes.error) {
+            throw new Error("Gagal mengambil data bulanan untuk laporan.");
+        }
+        
+        const transactions = transactionsRes.data || [];
+        const expenses = expensesRes.data || [];
+        const stockPurchases = stockPurchasesRes.data || [];
+
+        const totalPendapatan = transactions.reduce((sum, tx) => sum + (tx.revenue || 0), 0);
+        const totalModal = transactions.reduce((sum, tx) => sum + (tx.cost_of_goods || 0), 0);
+        const labaKotor = totalPendapatan - totalModal;
+        const totalKomisi = transactions.reduce((sum, tx) => sum + (((tx.revenue || 0) - (tx.cost_of_goods || 0)) * (tx.commission_percentage || 0) / 100), 0);
+        const totalBebanOperasional = expenses.reduce((sum, ex) => sum + (ex.amount || 0), 0);
+        const totalPembelanjaanStok = stockPurchases.reduce((sum, sp) => sum + (sp.amount || 0), 0);
+        const labaBersihFinal = labaKotor - totalKomisi - totalBebanOperasional;
+
+        const kategoriCount = transactions.reduce((acc, tx) => { acc[tx.device_category || 'Lainnya'] = (acc[tx.device_category || 'Lainnya'] || 0) + 1; return acc; }, {});
+        
+        // --- Sheet 1: PEMASUKAN ---
+        let pemasukanData = [
+            [`LAPORAN PEMASUKAN TAZAKKA - ${monthName} ${year}`], [],
+            ["RINGKASAN KEUANGAN"],
+            ["Total Pendapatan Kotor", formatToRupiah(totalPendapatan)],
+            ["Total Modal Barang Terjual", formatToRupiah(totalModal)],
+            ["Laba Kotor (Pendapatan - Modal)", formatToRupiah(labaKotor)],
+            ["Total Komisi Teknisi", formatToRupiah(totalKomisi)],
+            ["Total Beban Operasional", formatToRupiah(totalBebanOperasional)],
+            ["LABA BERSIH FINAL", formatToRupiah(labaBersihFinal)], [],
+            ["RINGKASAN KATEGORI PERANGKAT"],
+            ["Kategori", "Jumlah Transaksi"],
+            ...Object.entries(kategoriCount).map(([key, value]) => [key, value]),
+            ["TOTAL", transactions.length], [],
+            ["DETAIL PEMASUKAN"],
+            ["Tanggal", "Pelanggan", "Deskripsi", "Kategori Perangkat", "Pendapatan", "Modal", "Teknisi", "Komisi %"]
+        ];
+        transactions.forEach(tx => {
+            pemasukanData.push([
+                new Date(tx.transaction_date).toLocaleDateString('id-ID'),
+                tx.customer_name,
+                tx.description,
+                tx.device_category,
+                formatToRupiah(tx.revenue),
+                formatToRupiah(tx.cost_of_goods),
+                tx.technician_name || '-',
+                tx.commission_percentage || 0
+            ]);
+        });
+        const ws_pemasukan = XLSX.utils.aoa_to_sheet(pemasukanData);
+        ws_pemasukan['!cols'] = [{wch:12}, {wch:25}, {wch:40}, {wch:20}, {wch:15}, {wch:15}, {wch:20}, {wch:10}];
+
+        // --- Sheet 2: PENGELUARAN (Dengan Logika Baru yang Terpisah) ---
+        let pengeluaranData = [
+            [`LAPORAN PENGELUARAN TAZAKKA - ${monthName} ${year}`], [],
+            ["RINGKASAN PENGELUARAN"],
+            ["Total Beban Operasional", formatToRupiah(totalBebanOperasional)],
+            ["Total Pembelanjaan Stok", formatToRupiah(totalPembelanjaanStok)],
+            ["TOTAL PENGELUARAN KESELURUHAN", formatToRupiah(totalBebanOperasional + totalPembelanjaanStok)], [],
+        ];
+        // Tabel Beban Operasional
+        pengeluaranData.push(["DETAIL BEBAN OPERASIONAL"]);
+        pengeluaranData.push(["Tanggal", "Deskripsi", "Jumlah"]);
+        expenses.forEach(item => pengeluaranData.push([new Date(item.expense_date).toLocaleDateString('id-ID'), item.description, formatToRupiah(item.amount)]));
+        pengeluaranData.push([]); // Baris kosong sebagai pemisah
+        // Tabel Pembelian Stok
+        pengeluaranData.push(["DETAIL PEMBELIAN STOK"]);
+        pengeluaranData.push(["Tanggal", "Deskripsi", "Jumlah"]);
+        stockPurchases.forEach(item => pengeluaranData.push([new Date(item.purchase_date).toLocaleDateString('id-ID'), item.description, formatToRupiah(item.amount)]));
+        
+        const ws_pengeluaran = XLSX.utils.aoa_to_sheet(pengeluaranData);
+        ws_pengeluaran['!cols'] = [{wch:12}, {wch:40}, {wch:20}];
+
+        // --- Buat dan Unduh Workbook ---
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws_pemasukan, 'PEMASUKAN');
+        XLSX.utils.book_append_sheet(wb, ws_pengeluaran, 'PENGELUARAN');
+        XLSX.writeFile(wb, `Laporan_Bulanan_${monthName}_${year}.xlsx`);
+    } catch (error) {
+        toast.error("Gagal membuat file laporan bulanan: " + error.message);
+        console.error("Gagal membuat file XLSX:", error);
+    }
+  };
+
   const chartData = useMemo(() => {
     if (!dailyDetails?.transactions) return { revenueByCategory: [], profitByTransaction: [] };
-
     const revenueByCategory = dailyDetails.transactions.reduce((acc, tx) => {
         const category = tx.device_category || 'Lainnya';
-        if (!acc[category]) {
-            acc[category] = { name: category, value: 0 };
-        }
+        if (!acc[category]) { acc[category] = { name: category, value: 0 }; }
         acc[category].value += tx.revenue || 0;
         return acc;
     }, {});
-
-    const profitByTransaction = dailyDetails.transactions.map((tx, index) => {
-        const profit = (tx.revenue || 0) - (tx.cost_of_goods || 0);
-        return {
-            name: `Trx #${index + 1}`,
-            laba: profit,
-        };
-    });
-
-    return {
-        revenueByCategory: Object.values(revenueByCategory),
-        profitByTransaction
-    };
+    const profitByTransaction = dailyDetails.transactions.map((tx, index) => ({
+        name: `Trx #${index + 1}`,
+        laba: (tx.revenue || 0) - (tx.cost_of_goods || 0),
+    }));
+    return { revenueByCategory: Object.values(revenueByCategory), profitByTransaction };
   }, [dailyDetails]);
 
   const PIE_CHART_COLORS = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6', '#34495e'];
 
   return (
     <div className="container">
-      
       <div className="dashboard-header">
         <div>
           <h1 className="dashboard-title">Dashboard</h1>
@@ -201,12 +306,8 @@ function DashboardPage() {
           </p>
         </div>
         <div className="dashboard-actions">
-
-          {/* === PERBAIKAN UTAMA: GANTI INPUT TANGGAL BAWAAN DENGAN KOMPONEN BARU === */}
           <StyledDatePicker
-            // Konversi string 'YYYY-MM-DD' dari state menjadi Date object yang dibutuhkan oleh komponen
             selectedDate={new Date(selectedDate + 'T00:00:00')}
-            // Saat tanggal berubah, komponen memberikan Date object, kita konversi kembali ke string 'YYYY-MM-DD' untuk state
             onChange={(date) => {
               const year = date.getFullYear();
               const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -214,7 +315,6 @@ function DashboardPage() {
               setSelectedDate(`${year}-${month}-${day}`);
             }}
           />
-
           <button onClick={handleCopyReport} className="btn btn-info" title="Salin Laporan Harian">
             <FiCopy style={{ marginRight: '8px' }} /> Copy
           </button>
@@ -228,9 +328,8 @@ function DashboardPage() {
       </div>
       
       {loading && <p>Memuat data...</p>}
-      {error && <p className="error">{error}</p>}
       
-      {!loading && !error && summaryData && dailyDetails && (
+      {!loading && summaryData && dailyDetails && (
         <>
             <div className="stats-grid">
               <div className="stat-card">
@@ -286,13 +385,7 @@ function DashboardPage() {
                       <PieChart>
                           <Pie
                               data={chartData.revenueByCategory}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={110}
-                              fill="#8884d8"
-                              dataKey="value"
-                              nameKey="name"
+                              cx="50%" cy="50%" labelLine={false} outerRadius={110} fill="#8884d8" dataKey="value" nameKey="name"
                               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                           >
                               {chartData.revenueByCategory.map((entry, index) => (
@@ -455,7 +548,7 @@ function DashboardPage() {
         </>
       )}
 
-      {!loading && !error && !summaryData && <p>Tidak ada data untuk ditampilkan pada tanggal ini.</p>}
+      {!loading && !summaryData && <p>Tidak ada data untuk ditampilkan pada tanggal ini.</p>}
       
       {editingItem && ( <EditModal item={editingItem} type={modalType} onClose={handleCloseEditModal} onSave={handleSaveEdit} /> )}
       {showImportModal && ( <ImportModal onClose={() => setShowImportModal(false)} onImportSuccess={() => { setShowImportModal(false); setSelectedDate(new Date(selectedDate + 'T00:00:00').toISOString().split('T')[0]); }} /> )}

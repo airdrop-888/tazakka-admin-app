@@ -1,10 +1,15 @@
-// frontend/src/App.jsx (Versi Baru dengan Supabase Session Management)
+// frontend/src/App.jsx (Struktur Anda + Integrasi Notifikasi Modern)
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { supabase } from './supabaseClient'; // <- Impor Supabase
+import { supabase } from './supabaseClient';
 
-// Impor semua komponen halaman dan layout
+// === PENAMBAHAN: Impor untuk Notifikasi Modern ===
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+// === AKHIR PENAMBAHAN ===
+
+// Impor semua komponen halaman dan layout (Struktur Anda dipertahankan)
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ManageUsersPage from './pages/ManageUsersPage';
@@ -17,9 +22,9 @@ import './index.css';
 import './MainLayout.css';
 
 // Impor Provider UserContext
-import { UserProvider } from './UserContext'; // <- Kita akan tetap pakai ini, tapi dengan cara baru
+import { UserProvider } from './UserContext';
 
-// Komponen Pembungkus untuk Rute yang Dilindungi (SEKARANG BERDASARKAN SESSION)
+// Komponen Pembungkus untuk Rute yang Dilindungi (Logika Anda dipertahankan)
 const ProtectedRoute = ({ session, children }) => {
   if (!session) {
     // Jika tidak ada sesi, lempar ke halaman login
@@ -31,37 +36,53 @@ const ProtectedRoute = ({ session, children }) => {
 };
 
 function App() {
-  // Ganti state 'token' dengan state 'session' dari Supabase
+  // State 'session' dari Supabase (Logika Anda dipertahankan)
   const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true); // State untuk loading awal
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Cek sesi yang aktif saat aplikasi pertama kali dimuat
+    // Cek sesi yang aktif saat aplikasi pertama kali dimuat (Logika Anda dipertahankan)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoading(false); // Selesai loading
+      setLoading(false);
     });
 
-    // Ini adalah "pendengar" utama. Ia akan berjalan setiap kali user login atau logout
+    // Listener utama untuk perubahan status login/logout (Logika Anda dipertahankan)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
-    // Cleanup: Berhenti mendengarkan saat komponen tidak lagi ditampilkan
+    // Cleanup listener (Logika Anda dipertahankan)
     return () => subscription.unsubscribe();
   }, []);
 
-  // Tampilkan loading screen saat sesi sedang diperiksa
+  // Tampilan loading saat sesi diperiksa (Logika Anda dipertahankan)
   if (loading) {
     return <div>Memeriksa sesi...</div>;
   }
 
   return (
     <Router>
-      {/* UserProvider sekarang mendapatkan `session` sebagai prop */}
+      {/* === PENAMBAHAN: Komponen Kontainer Notifikasi === */}
+      {/* Ini tidak akan merusak UI Anda, hanya menyiapkan 'wadah' untuk notifikasi */}
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+      {/* === AKHIR PENAMBAHAN === */}
+
+      {/* UserProvider sekarang mendapatkan `session` sebagai prop (Logika Anda dipertahankan) */}
       <UserProvider session={session}>
         <Routes>
-          {/* Rute Login: Hanya tampil jika TIDAK ada sesi */}
+          {/* Rute Login: Hanya tampil jika TIDAK ada sesi (Struktur Anda dipertahankan) */}
           <Route 
             path="/login" 
             element={!session ? <LoginPage /> : <Navigate to="/" />} 
@@ -97,7 +118,7 @@ function App() {
             }
           />
 
-          {/* Rute Kelola Staf */}
+          {/* Rute Kelola Staf (Nama file disesuaikan menjadi ManageUsersPage) */}
           <Route 
             path="/manage-users"
             element={
@@ -107,7 +128,7 @@ function App() {
             }
           />
           
-          {/* Rute "Catch-all" */}
+          {/* Rute "Catch-all" (Struktur Anda dipertahankan) */}
           <Route path="*" element={<Navigate to="/" />} />
 
         </Routes>
