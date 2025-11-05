@@ -1,4 +1,4 @@
-// frontend/src/pages/ServiceJobsPage.jsx (FINAL DENGAN PERBAIKAN LOGIKA UPDATE STATUS)
+// frontend/src/pages/ServiceJobsPage.jsx (FINAL DENGAN LOGIKA PEMBUATAN TRANSAKSI OTOMATIS)
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
@@ -210,29 +210,77 @@ const ServiceJobsPage = () => {
         }
     };
 
+    // --- KODE BARU DIMULAI DI SINI ---
     const handleStatusChange = async (jobId, newStatus) => {
+        // Pastikan kita memiliki ID pengguna untuk transaksi
+        if (!currentUser || !currentUser.id) {
+            toast.error("Gagal, user tidak terautentikasi.");
+            return;
+        }
+
         const originalJobs = [...jobs];
+        
         // 1. Lakukan pembaruan optimis pada UI
         setJobs(prevJobs => prevJobs.map(job =>
             job.id === jobId ? { ...job, status: newStatus } : job
         ));
 
-        // 2. Kirim perubahan ke database
-        const { error } = await supabase
+        // 2. Kirim perubahan status ke database
+        const { error: statusUpdateError } = await supabase
             .from('service_jobs')
             .update({ status: newStatus })
             .eq('id', jobId);
 
         // 3. Tangani hasilnya
-        if (error) {
-            toast.error(`Gagal update status: ${error.message}`);
+        if (statusUpdateError) {
+            toast.error(`Gagal update status: ${statusUpdateError.message}`);
             setJobs(originalJobs); // Kembalikan ke state semula jika gagal
-        } else {
-            toast.success("Status berhasil diperbarui!");
-            // --- PERUBAHAN KUNCI DI SINI ---
-            // fetchTableData(); // HAPUS BARIS INI
+            return;
+        } 
+        
+        toast.success("Status berhasil diperbarui!");
+
+        // 4. LOGIKA BARU: OTOMATIS TAMBAHKAN TRANSAKSI JIKA STATUS = 'Selesai'
+        if (newStatus === 'Selesai') {
+            
+            // 4a. Ambil detail job yang baru selesai dari state asli sebelum update UI
+            const jobDetail = originalJobs.find(j => j.id === jobId);
+            
+            if (!jobDetail) {
+                toast.error("Detail Servisan tidak ditemukan untuk membuat transaksi.");
+                return;
+            }
+
+            // 4b. Siapkan payload untuk tabel 'transactions'
+            const transactionPayload = {
+                customer_name: jobDetail.customer_name,
+                description: `Servis Selesai: ${jobDetail.device_description} (${jobDetail.service_number})`,
+                revenue: jobDetail.estimated_cost || 0, // Biaya servis menjadi Pendapatan
+                cost_of_goods: jobDetail.cost_of_goods || 0, // Modal barang (jika ada)
+                technician_name: jobDetail.technician_name || null,
+                commission_percentage: jobDetail.commission_percentage || null,
+                device_category: 'Servis', // Kategori umum untuk Servis
+                part_category: 'Jasa Servis', // Kategori part/jasa
+                payment_method: 'Tunai', // Default 'Tunai', bisa diedit di Dashboard jika perlu
+                transaction_date: new Date().toISOString().split('T')[0],
+                recorded_by_user_id: currentUser.id,
+                // Anda bisa menambahkan kolom service_job_id di tabel 'transactions' jika ingin men-trace
+                // service_job_id: jobId 
+            };
+            
+            // 4c. Sisipkan transaksi baru
+            const { error: transactionError } = await supabase
+                .from('transactions')
+                .insert([transactionPayload]);
+
+            if (transactionError) {
+                toast.error("Gagal membuat transaksi pemasukan: " + transactionError.message);
+            } else {
+                toast.success("Transaksi servisan berhasil ditambahkan ke Dashboard!");
+            }
         }
     };
+    // --- AKHIR DARI KODE BARU ---
 
     const handleSendWhatsAppNotification = (e, job) => {
         e.stopPropagation(); 
