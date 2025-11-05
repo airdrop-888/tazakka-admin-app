@@ -1,0 +1,442 @@
+/* frontend/src/pages/ServiceJobsPage.css (FINAL WARNA DROPDOWN LENGKAP) */
+
+/* --- Layout Utama & Header --- */
+.servisan-page-layout-single {}
+
+.main-content-area.card-style {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 28px;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.header-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Toolbar Tabel --- */
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex-grow: 1;
+  min-width: 250px;
+}
+
+.search-box svg {
+  color: #94a3b8;
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+
+.status-filters {
+  display: flex;
+  gap: 10px;
+}
+
+.status-filters button {
+  background-color: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-filters button:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.status-filters button.active {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* --- Tombol WhatsApp --- */
+.btn-whatsapp {
+  color: #25D366;
+  font-size: 1.2rem;
+}
+
+.btn-whatsapp:hover {
+  background-color: #dcf8c6 !important;
+  color: #128C7E !important;
+}
+
+/* --- Tabel --- */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-container th,
+.table-container td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-container thead th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.table-container tbody td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.table-container tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-icon {
+  color: #64748b;
+}
+
+.btn-icon:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.table-container td[data-label="Status"] {
+  overflow: visible;
+}
+
+/* --- ▼▼▼ Styling Dropdown Status Modern ▼▼▼ --- */
+
+/* Container utama */
+.status-dropdown-container {
+  position: relative;
+  width: fit-content;
+}
+
+/* Tombol trigger dropdown */
+.status-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 12px;
+  text-transform: capitalize;
+  border: none;
+  cursor: pointer;
+  min-width: 160px;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Efek saat hover & saat dropdown terbuka */
+.status-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.status-trigger.open {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* Warna tombol utama berdasarkan status */
+.status-trigger.menunggu-pengecekan,
+.status-trigger.menunggu-konfirmasi {
+  background-color: #fef9c3;
+  color: #713f12;
+}
+
+.status-trigger.dalam-pengerjaan {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-trigger.siap-diambil {
+  background-color: #cffafe;
+  color: #0e7490;
+}
+
+.status-trigger.selesai {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-trigger.dibatalkan {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Ikon panah */
+.chevron-icon {
+  transition: transform 0.2s ease-in-out;
+}
+
+.chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Daftar pilihan */
+.status-options-list {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 99;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.status-options-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+}
+
+/* Item di dalam dropdown */
+.status-option {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Warna dasar untuk tiap item list (agar langsung berwarna) */
+.status-option-menunggu-pengecekan,
+.status-option-menunggu-konfirmasi {
+  background-color: #fffef5;
+}
+
+.status-option-dalam-pengerjaan {
+  background-color: #f0f7ff;
+}
+
+.status-option-siap-diambil {
+  background-color: #ecfeff;
+}
+
+.status-option-selesai {
+  background-color: #edfff7;
+}
+
+.status-option-dibatalkan {
+  background-color: #fff5f5;
+}
+
+/* Warna saat hover */
+.status-option-menunggu-pengecekan:hover,
+.status-option-menunggu-konfirmasi:hover {
+  background-color: #fef9c3;
+  color: #713f12;
+}
+
+.status-option-dalam-pengerjaan:hover {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-option-siap-diambil:hover {
+  background-color: #cffafe;
+  color: #0e7490;
+}
+
+.status-option-selesai:hover {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-option-dibatalkan:hover {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Warna item yang terpilih */
+.status-option-menunggu-pengecekan.selected,
+.status-option-menunggu-konfirmasi.selected {
+  background-color: #fef9c3;
+  color: #713f12;
+  font-weight: 700;
+}
+
+.status-option-dalam-pengerjaan.selected {
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.status-option-siap-diambil.selected {
+  background-color: #cffafe;
+  color: #0e7490;
+  font-weight: 700;
+}
+
+.status-option-selesai.selected {
+  background-color: #d1fae5;
+  color: #065f46;
+  font-weight: 700;
+}
+
+.status-option-dibatalkan.selected {
+  background-color: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+/* Animasi */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Modal & Responsif --- */
+.modal-backdrop {
+  z-index: 1000;
+}
+
+.modal-content {
+  max-width: 600px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.modal-form input,
+.modal-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-container thead {
+    display: none;
+  }
+
+  .table-container tr {
+    display: block;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+  }
+
+  .table-container td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    padding: 8px 5px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .table-container tr td:last-child {
+    border-bottom: none;
+  }
+
+  .table-container td::before {
+    content: attr(data-label);
+    text-align: left;
+    font-weight: bold;
+    color: #4a5568;
+    margin-right: 15px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

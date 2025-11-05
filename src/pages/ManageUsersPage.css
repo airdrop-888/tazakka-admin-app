@@ -1,0 +1,165 @@
+/* frontend/src/pages/ManageUsersPage.css (Lengkap dengan Penyempurnaan UI dan CSS Responsif) */
+
+/* --- Style untuk Header Halaman --- */
+.page-header {
+  margin-bottom: 25px;
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 28px; /* Ukuran font standar seperti di dashboard */
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* --- Layout Utama --- */
+.manage-users-layout {
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: 30px;
+  /* Kunci untuk alignment: memastikan item di dalam grid memulai dari titik teratas yang sama */
+  align-items: start;
+}
+
+/* --- Gaya Kartu Umum --- */
+.card-style {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* --- Judul di dalam Kartu --- */
+.card-title {
+  margin-top: 0;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #34495e;
+}
+
+/* --- Gaya Form --- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px 20px;
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.form-container input[type="text"],
+.form-container input[type="password"],
+.form-container select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  box-sizing: border-box;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-container input::placeholder {
+  color: #a0aec0;
+}
+
+.form-container input:focus,
+.form-container select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.form-actions {
+  margin-top: 25px;
+}
+
+.form-actions .btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* --- Responsiveness untuk Layar Tablet --- */
+@media (max-width: 992px) {
+  .manage-users-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- KODE BARU DIMULAI DI SINI: Responsiveness untuk Tabel di Layar Mobile --- */
+@media (max-width: 768px) {
+  /* Sembunyikan header tabel asli di mobile */
+  .table-container thead {
+    display: none;
+  }
+
+  /* Ubah perilaku tabel agar tidak lagi menjadi tabel */
+  .table-container table, 
+  .table-container tbody, 
+  .table-container tr, 
+  .table-container td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Ubah setiap baris menjadi kartu yang terpisah */
+  .table-container tr {
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden; /* Pastikan border-radius diterapkan dengan benar */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* Hilangkan border antar baris yang tidak diperlukan lagi */
+  .table-container tr td {
+    border: none;
+  }
+
+  /* Atur setiap sel di dalam kartu */
+  .table-container td {
+    text-align: right; /* Ratakan data ke kanan */
+    padding: 12px 15px 12px 50%; /* Beri ruang di kiri untuk label */
+    position: relative;
+    border-bottom: 1px solid #f1f5f9; /* Garis pemisah antar item di dalam kartu */
+  }
+
+  .table-container tr td:last-child {
+    border-bottom: none; /* Hapus border untuk sel terakhir di kartu */
+  }
+
+  /* Ini adalah bagian intinya: Buat label dari atribut data-label */
+  .table-container td::before {
+    content: attr(data-label); /* Ambil teks dari atribut data-label */
+    position: absolute;
+    left: 15px;
+    width: calc(50% - 30px); /* Sesuaikan lebar label */
+    text-align: left;
+    font-weight: bold;
+    color: #4a5568;
+  }
+
+  /* Penyesuaian khusus untuk kolom Aksi agar tombolnya rapi */
+  .table-container td[data-label="Aksi"] .action-button-container {
+    display: flex; /* Gunakan flexbox untuk alignment */
+    justify-content: flex-end; /* Ratakan tombol ke kanan */
+    gap: 15px;
+  }
+}

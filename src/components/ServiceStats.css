@@ -1,0 +1,76 @@
+/* frontend/src/components/ServiceStats.css */
+
+.service-stats-container {
+  margin-top: 30px; /* Jarak dari card keuangan di atasnya */
+}
+
+.stats-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.2rem; /* Ukuran disamakan dengan judul chart */
+  color: #34495e;
+  font-weight: 600;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Tampilkan 4 card sejajar */
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.stat-icon.icon-total { background-color: #3b82f6; }
+.stat-icon.icon-menunggu { background-color: #f59e0b; }
+.stat-icon.icon-pengerjaan { background-color: #8b5cf6; }
+.stat-icon.icon-siap { background-color: #10b981; }
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* Penyesuaian untuk layar lebih kecil */
+@media (max-width: 992px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
