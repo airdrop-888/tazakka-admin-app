@@ -210,7 +210,7 @@ const ServiceJobsPage = () => {
         }
     };
 
-    // --- KODE BARU DIMULAI DI SINI ---
+    // --- KODE PERBAIKAN DAN PENAMBAHAN DIMULAI DI SINI ---
     const handleStatusChange = async (jobId, newStatus) => {
         // Pastikan kita memiliki ID pengguna untuk transaksi
         if (!currentUser || !currentUser.id) {
@@ -219,11 +219,23 @@ const ServiceJobsPage = () => {
         }
 
         const originalJobs = [...jobs];
+        const jobDetail = originalJobs.find(j => j.id === jobId);
+        const oldStatus = jobDetail ? jobDetail.status : null;
         
         // 1. Lakukan pembaruan optimis pada UI
-        setJobs(prevJobs => prevJobs.map(job =>
-            job.id === jobId ? { ...job, status: newStatus } : job
-        ));
+        setJobs(prevJobs => {
+            const isNoLongerActive = !ACTIVE_STATUSES.includes(newStatus);
+            if (statusFilter === 'Aktif' && isNoLongerActive) {
+                // JIKA filter saat ini 'Aktif' dan status baru BUKAN status aktif,
+                // maka hapus job tersebut dari tampilan.
+                return prevJobs.filter(job => job.id !== jobId);
+            } else {
+                // Jika tidak, hanya perbarui statusnya seperti biasa.
+                return prevJobs.map(job =>
+                    job.id === jobId ? { ...job, status: newStatus } : job
+                );
+            }
+        });
 
         // 2. Kirim perubahan status ke database
         const { error: statusUpdateError } = await supabase
@@ -234,27 +246,46 @@ const ServiceJobsPage = () => {
         // 3. Tangani hasilnya
         if (statusUpdateError) {
             toast.error(`Gagal update status: ${statusUpdateError.message}`);
-            setJobs(originalJobs); // Kembalikan ke state semula jika gagal
+            fetchTableData(); 
             return;
         } 
         
         toast.success("Status berhasil diperbarui!");
 
-        // 4. LOGIKA BARU: OTOMATIS TAMBAHKAN TRANSAKSI JIKA STATUS = 'Selesai'
-        if (newStatus === 'Selesai') {
+        // 4. LOGIKA BARU: HAPUS TRANSAKSI JIKA STATUS BERUBAH DARI 'Selesai' ke status lain
+        if (oldStatus === 'Selesai' && newStatus !== 'Selesai') {
             
-            // 4a. Ambil detail job yang baru selesai dari state asli sebelum update UI
-            const jobDetail = originalJobs.find(j => j.id === jobId);
+            if (!jobDetail) return; // Seharusnya tidak terjadi, tapi sebagai pengaman
+
+            const serviceNum = jobDetail.service_number;
+            
+            // Mencari dan menghapus transaksi berdasarkan Nomor Servis di deskripsi
+            const { error: deleteError } = await supabase
+                .from('transactions')
+                .delete()
+                // Mencari deskripsi yang mengandung nomor servis yang diapit kurung, contoh: (TGS-251104-237)
+                .ilike('description', `%(${serviceNum})%`); 
+
+            if (deleteError) {
+                toast.error("Gagal menghapus transaksi dari Dashboard: " + deleteError.message);
+            } else {
+                toast.warn("Transaksi servisan berhasil dihapus dari Dashboard.");
+            }
+        }
+        
+        // 5. LOGIKA TRANSAKSI: OTOMATIS TAMBAHKAN TRANSAKSI JIKA STATUS = 'Selesai'
+        if (newStatus === 'Selesai') {
             
             if (!jobDetail) {
                 toast.error("Detail Servisan tidak ditemukan untuk membuat transaksi.");
                 return;
             }
 
-            // 4b. Siapkan payload untuk tabel 'transactions'
+            // ... (Payload transaksi sama seperti sebelumnya)
             const transactionPayload = {
                 customer_name: jobDetail.customer_name,
-                description: `Servis Selesai: ${jobDetail.device_description} (${jobDetail.service_number})`,
+                // Pastikan format deskripsi transaksi sama dengan yang dicari saat penghapusan di atas
+                description: `Servis Selesai: ${jobDetail.device_description} (${jobDetail.service_number})`, 
                 revenue: jobDetail.estimated_cost || 0, // Biaya servis menjadi Pendapatan
                 cost_of_goods: jobDetail.cost_of_goods || 0, // Modal barang (jika ada)
                 technician_name: jobDetail.technician_name || null,
@@ -264,11 +295,9 @@ const ServiceJobsPage = () => {
                 payment_method: 'Tunai', // Default 'Tunai', bisa diedit di Dashboard jika perlu
                 transaction_date: new Date().toISOString().split('T')[0],
                 recorded_by_user_id: currentUser.id,
-                // Anda bisa menambahkan kolom service_job_id di tabel 'transactions' jika ingin men-trace
-                // service_job_id: jobId 
             };
             
-            // 4c. Sisipkan transaksi baru
+            // Sisipkan transaksi baru
             const { error: transactionError } = await supabase
                 .from('transactions')
                 .insert([transactionPayload]);
@@ -280,7 +309,7 @@ const ServiceJobsPage = () => {
             }
         }
     };
-    // --- AKHIR DARI KODE BARU ---
+    // --- AKHIR DARI LOGIKA STATUS CHANGE & TRANSAKSI ---
 
     const handleSendWhatsAppNotification = (e, job) => {
         e.stopPropagation(); 
@@ -295,11 +324,14 @@ const ServiceJobsPage = () => {
             phoneNumber = '62' + phoneNumber.substring(1);
         }
 
-        const message = `Yth. Bpk/Ibu ${job.customer_name},\n\nServis perangkat "${job.device_description}" dengan no. servis ${job.service_number} telah SELESAI dan SIAP DIAMBIL.\n\nTerima kasih,\nTazakka Group Service`;
+        // BARIS INI DENGAN TRIM() DAN BOLD UNTUK NOMOR SERVIS
+        const message = `Yth. Bpk/Ibu *${job.customer_name.trim()}*,\n\nServis perangkat *${job.device_description.trim()}* dengan no. servis *${job.service_number}* telah SELESAI dan SIAP DIAMBIL.\n\nTerima kasih,\nTazakka Group Service`;
+        
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
         window.open(whatsappUrl, '_blank');
     };
+    // --- AKHIR DARI KODE PERBAIKAN DAN PENAMBAHAN ---
 
     return (
         <div className="container">
